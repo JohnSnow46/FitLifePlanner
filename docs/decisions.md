@@ -31,6 +31,13 @@ Template for a new entry:
 
 <!-- Newest entries go directly below this line. -->
 
+### 2026-08-05 — ETAP 1 scaffolding step 3/4: EF Core + SQLite wiring, initial migration
+- ADRs used: ADR-0002 (Code-First EF Core + SQLite, git-ignored `.db` file, migrations
+  in `FitLifePlanner.Infrastructure` — implemented `FitLifePlannerDbContext`, 11
+  `IEntityTypeConfiguration<T>` classes, and the `InitialCreate` migration exactly as
+  decided; `WorkoutLog.WorkoutPlanId` configured `DeleteBehavior.SetNull` per
+  `docs/database.md` §2's history-survives-plan-deletion rule)
+
 ### 2026-08-05 — ETAP 1 scaffolding step 2/4: MVP domain entities
 - ADRs used: ADR-0001 (Domain layer purity rule — verified all 12 entities are plain
   POCOs with zero EF Core/Infrastructure/Api references, per the layering decision)

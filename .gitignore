@@ -10,6 +10,11 @@ Thumbs.db
 bin/
 obj/
 
+# SQLite local dev database (ADR-0002) — never committed
+*.db
+*.db-shm
+*.db-wal
+
 # Generic build/dependency output
 node_modules/
 dist/
