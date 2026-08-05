@@ -1,9 +1,5 @@
 # Architecture
 
-> Status: not yet defined. This file is filled in during **ETAP 1 — Analiza architektury**
-> (see `docs/roadmap.md`). Until then it only holds the section skeleton so later edits
-> can slot into the `## Index` pattern described in `docs/README.md`.
-
 ## Index
 
 - High-level overview → §1
@@ -12,13 +8,39 @@
 
 ## 1. High-level overview
 
-[Fill in during ETAP 1: what kind of application this is (web/mobile/API), how it's
-deployed, and the major building blocks.]
+FitLife Planner is a web app: a Blazor WebAssembly SPA frontend calling an ASP.NET Core
+Web API backend over HTTP/JSON. Both target **.NET 10 (LTS)**. Three feature areas at
+MVP scope: workout planning, meal/nutrition planning, progress tracking (see
+`docs/database.md` §2 for the domain model). Hosting is not yet decided — the app is
+designed to run entirely locally for now (SQLite file DB, `dotnet run` for both
+projects); no deployment infrastructure exists yet. See ADR-0001.
 
 ## 2. Layers / modules
 
-[Fill in during ETAP 1: the module/layer breakdown and the responsibility of each.]
+Four projects, dependency direction one-way (no cycles):
+
+```
+FitLifePlanner.Web (Blazor WASM SPA)
+        |  HTTP/JSON only — no project reference
+        v
+FitLifePlanner.Api  --->  FitLifePlanner.Infrastructure  --->  FitLifePlanner.Domain
+```
+
+- **`FitLifePlanner.Domain`** — entities, enums, business rules. No outward
+  dependencies.
+- **`FitLifePlanner.Infrastructure`** — EF Core `DbContext`, entity configurations,
+  migrations. Depends on `Domain`.
+- **`FitLifePlanner.Api`** — controllers/endpoints, DI composition root, DTOs, and thin
+  orchestration logic (no separate Application/CQRS layer at this scale). Depends on
+  `Domain` + `Infrastructure`.
+- **`FitLifePlanner.Web`** — Blazor WebAssembly SPA, consumes `Api` over HTTP only.
+
+No generic repository/unit-of-work abstraction — `Api`/`Infrastructure` use EF Core's
+`DbContext` directly. Rationale and alternatives considered: ADR-0001.
 
 ## 3. Key architectural decisions
 
-Summarized here, full text in `docs/adr/ADR-NNNN.md` and indexed in `docs/decisions.md`.
+- **ADR-0001** — Backend (ASP.NET Core Web API) + frontend (Blazor WebAssembly) stack,
+  and the four-project layering above. See `docs/adr/ADR-0001-architecture-and-stack.md`.
+- **ADR-0002** — Data storage: EF Core + SQLite for local dev, production provider
+  deferred to the hosting decision. See `docs/adr/ADR-0002-data-storage.md`.

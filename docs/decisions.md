@@ -8,8 +8,11 @@ This file is an **index and usage log**, not content. Full ADR text lives one-pe
 
 One line per ADR: number, link, one-sentence summary. Newest at the bottom.
 
-- [ADR-0001](adr/ADR-0001-example.md) — Example ADR showing the Context → Decision →
-  Consequences format. Delete once you have real ADRs.
+- [ADR-0001](adr/ADR-0001-architecture-and-stack.md) — Backend: ASP.NET Core Web API
+  (.NET 10); frontend: Blazor WebAssembly SPA; four-project layout (Domain/
+  Infrastructure/Api/Web), no separate Application/CQRS layer.
+- [ADR-0002](adr/ADR-0002-data-storage.md) — EF Core (Code-First) with SQLite as the
+  local-dev provider; production provider deferred to the hosting decision.
 
 ## ADR Notes
 
@@ -27,3 +30,7 @@ Template for a new entry:
 ```
 
 <!-- Newest entries go directly below this line. -->
+
+### 2026-08-05 — ETAP 1: architecture analysis (initial stack/layering/storage decision)
+- ADRs used: ADR-0001, ADR-0002 (created by this task — first real architecture decision
+  for the project; ADR-0001-example.md retired in favor of ADR-0001)
