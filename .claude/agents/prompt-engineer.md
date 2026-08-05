@@ -57,7 +57,9 @@ write a skill for something that needs its own tool-restricted context.
    full prompt text directly (in a quoted/code block, ready to copy), even if you also
    save it to a file. Only write the file (`Write`/`Edit`) if the user explicitly asks
    ("save it to the repo", "create the agent file") — the fact that the prompt is *about*
-   e.g. a new subagent isn't itself such a request.
+   e.g. a new subagent isn't itself such a request. Wrap the returned prompt block with a
+   line containing exactly `---` above and below it, so it can be pasted straight into
+   `tools/prompt-runner/queue.txt` (see `tools/prompt-runner/README.md`).
 6. Don't run the prompt you generated (e.g. don't invoke `architect`/`builder` with it via
    the Agent tool) and don't perform the task it describes — it's content to hand to the
    user, who decides whether to use it.

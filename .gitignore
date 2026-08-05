@@ -15,3 +15,6 @@ build/
 # Personal overrides — .claude/ itself is meant to be committed (see README),
 # but settings.local.json is per-developer and must never be.
 .claude/settings.local.json
+
+# prompt-runner working artifacts — local run history, not project content
+tools/prompt-runner/logs/
