@@ -6,7 +6,11 @@ Thumbs.db
 .env.*
 !.env.example
 
-# Generic build/dependency output — narrow this once the stack is chosen in ETAP 1
+# .NET build output
+bin/
+obj/
+
+# Generic build/dependency output
 node_modules/
 dist/
 build/

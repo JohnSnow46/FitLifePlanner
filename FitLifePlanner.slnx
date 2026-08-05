@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FitLifePlanner.Api/FitLifePlanner.Api.csproj" />
+    <Project Path="src/FitLifePlanner.Domain/FitLifePlanner.Domain.csproj" />
+    <Project Path="src/FitLifePlanner.Infrastructure/FitLifePlanner.Infrastructure.csproj" />
+    <Project Path="src/FitLifePlanner.Web/FitLifePlanner.Web.csproj" />
+  </Folder>
+</Solution>
