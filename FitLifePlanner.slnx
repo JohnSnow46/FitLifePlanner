@@ -5,4 +5,7 @@
     <Project Path="src/FitLifePlanner.Infrastructure/FitLifePlanner.Infrastructure.csproj" />
     <Project Path="src/FitLifePlanner.Web/FitLifePlanner.Web.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FitLifePlanner.Tests/FitLifePlanner.Tests.csproj" />
+  </Folder>
 </Solution>
