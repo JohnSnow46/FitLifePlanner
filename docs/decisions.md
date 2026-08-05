@@ -31,6 +31,10 @@ Template for a new entry:
 
 <!-- Newest entries go directly below this line. -->
 
+### 2026-08-05 — ETAP 1 scaffolding step 2/4: MVP domain entities
+- ADRs used: ADR-0001 (Domain layer purity rule — verified all 12 entities are plain
+  POCOs with zero EF Core/Infrastructure/Api references, per the layering decision)
+
 ### 2026-08-05 — ETAP 1: architecture analysis (initial stack/layering/storage decision)
 - ADRs used: ADR-0001, ADR-0002 (created by this task — first real architecture decision
   for the project; ADR-0001-example.md retired in favor of ADR-0001)
