@@ -1,0 +1,17 @@
+.DS_Store
+Thumbs.db
+
+# Secrets / local env — never commit actual values
+.env
+.env.*
+!.env.example
+
+# Generic build/dependency output — narrow this once the stack is chosen in ETAP 1
+node_modules/
+dist/
+build/
+*.log
+
+# Personal overrides — .claude/ itself is meant to be committed (see README),
+# but settings.local.json is per-developer and must never be.
+.claude/settings.local.json
