@@ -129,12 +129,15 @@ See ADR-0001, ADR-0002.
 **ETAP 0 (repo & environment setup) — done.** Repo, Claude Code config, base docs
 structure, git workflow, and branches are in place. No business/domain code exists yet.
 
-**ETAP 1 (architecture analysis) — decided.** Stack, layering, and data storage are
+**ETAP 1 (architecture analysis) — done.** Stack, layering, and data storage are
 decided (ADR-0001, ADR-0002); `docs/architecture.md` and `docs/database.md` are filled
 in. `docs/api.md` and `.claude/settings.json` permissions are still open — the API
-surface and auth mechanism come with ETAP 4. No solution/project files exist yet —
-scaffolding the skeleton (empty-but-compiling projects, EF Core wired up) is the next
-`builder` task. Tracked in `docs/roadmap.md`.
+surface and auth mechanism come with ETAP 4. Skeleton is scaffolded: four projects
+(Domain/Infrastructure/Api/Web), 12 domain entities in `Domain`,
+`FitLifePlannerDbContext` + EF Core configurations + applied `InitialCreate` migration
+in `Infrastructure`, and a `FitLifePlanner.Tests` project with a passing DbContext
+smoke test. Next step is ETAP 3 (core domain features / business rules on the
+entities, per ADR-0001 — no separate Application layer). Tracked in `docs/roadmap.md`.
 
 ---
 

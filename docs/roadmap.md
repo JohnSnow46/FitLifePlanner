@@ -7,8 +7,8 @@ tracks sequencing and status only.
 | Stage | Goal | Status |
 |---|---|---|
 | ETAP 0 | Repo, Claude Code setup, base documentation, git workflow | ✅ Done |
-| ETAP 1 | Architecture analysis: stack choice, module/layer design, first ADRs | ✅ Decided (ADR-0001, ADR-0002); skeleton scaffolding pending |
-| ETAP 2 | Data model & database design (`docs/database.md`) | Planned |
+| ETAP 1 | Architecture analysis: stack choice, module/layer design, first ADRs | ✅ Done (ADR-0001, ADR-0002) |
+| ETAP 2 | Data model & database design (`docs/database.md`) | ✅ Done — schema documented in `docs/database.md` §2, implemented as EF Core configurations in `src/FitLifePlanner.Infrastructure/Configurations` |
 | ETAP 3 | Core domain features (MVP scope TBD after ETAP 1) | Planned |
 | ETAP 4 | API layer (`docs/api.md`) | Planned |
 | ETAP 5+ | TBD — expanded after MVP scope is known | Planned |
