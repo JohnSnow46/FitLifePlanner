@@ -1,9 +1,21 @@
 #!/usr/bin/env bash
-# Runs each prompt in queue.txt through `claude -p`, one at a time, in a fresh
-# session per prompt. Waits for one to finish before starting the next.
-set -euo pipefail
+# Runs each prompt in queue.txt as a fresh, fully interactive `claude` session,
+# one at a time. You watch and interact with each session normally (approve
+# tools, chat, interrupt); when you exit that session, the next queued prompt
+# starts automatically in a new session.
+set -uo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if grep -qi microsoft /proc/version 2>/dev/null; then
+  echo "Uwaga: to wyglada na WSL bash (sciezka projektu: $DIR)." >&2
+  echo "Jesli sesje claude beda zglaszac 'workspace not trusted' mimo ze w Windows" >&2
+  echo "juz go zaakceptowales, to dlatego ze WSL widzi ten projekt pod innym" >&2
+  echo "identyfikatorem sciezki (/mnt/c/... zamiast C:/...). Uzyj Git Bash zamiast" >&2
+  echo "WSL, albo zaakceptuj trust dialog osobno w ramach WSL." >&2
+  echo "" >&2
+fi
+
 QUEUE_FILE="$DIR/queue.txt"
 LOG_DIR="$DIR/logs"
 mkdir -p "$LOG_DIR"
@@ -27,21 +39,28 @@ run_prompt() {
     return
   fi
   count=$((count + 1))
-  local out_file="$LOG_DIR/output_${TIMESTAMP}_$(printf '%02d' "$count").md"
-  echo "=== [$count] starting $(date +%H:%M:%S) -> $out_file ==="
-  printf '%s' "$prompt" | claude -p > "$out_file" 2>&1
-  echo "=== [$count] done $(date +%H:%M:%S) ==="
+  echo ""
+  echo "=================================================="
+  echo "  Prompt $count/$total — starting interactive session"
+  echo "=================================================="
+  claude "$prompt"
+  echo ""
+  echo "  Prompt $count finished (session exited)."
 }
 
+total="$(grep -c -- '^---$' "$ARCHIVE_FILE" 2>/dev/null || true)"
+total=$((total + 1))
+
 current=""
-while IFS= read -r line || [ -n "$line" ]; do
+while IFS= read -r line <&3 || [ -n "$line" ]; do
   if [ "$line" == "---" ]; then
     run_prompt "$current"
     current=""
   else
     current+="$line"$'\n'
   fi
-done < "$ARCHIVE_FILE"
+done 3< "$ARCHIVE_FILE"
 run_prompt "$current"
 
+echo ""
 echo "All $count prompt(s) processed. Queue archived at: $ARCHIVE_FILE"
