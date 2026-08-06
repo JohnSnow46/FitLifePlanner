@@ -31,6 +31,14 @@ Template for a new entry:
 
 <!-- Newest entries go directly below this line. -->
 
+### 2026-08-06 — ETAP 3 step 2/3: Nutrition business rules
+- ADRs used: ADR-0001 (business rules kept directly on `MealPlan`/`MealPlanEntry`
+  entities, no Application layer; reused step 1/3's `Domain.Common.ValidationException`
+  instead of a new type, mirroring `WorkoutPlan.AddExercise` exactly).
+- ADRs read but not used: ADR-0002 (data storage) — no schema/migration change; the
+  `MealPlanEntryConfiguration` fluent-mapping fix (`WithMany()` → `WithMany(p =>
+  p.Entries)`) confirmed via a scratch probe migration with empty `Up`/`Down`.
+
 ### 2026-08-06 — ETAP 3 step 1/3: Workouts business rules
 - ADRs used: ADR-0001 (business rules kept directly on `WorkoutPlan`/`WorkoutPlanExercise`
   entities, no Application layer; `Domain` stays free of EF Core/ASP.NET dependencies —
