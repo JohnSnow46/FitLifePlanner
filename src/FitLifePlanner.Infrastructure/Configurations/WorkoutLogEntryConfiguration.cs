@@ -12,7 +12,7 @@ public class WorkoutLogEntryConfiguration : IEntityTypeConfiguration<WorkoutLogE
         builder.HasKey(e => e.Id);
 
         builder.HasOne<WorkoutLog>()
-            .WithMany()
+            .WithMany(l => l.Entries)
             .HasForeignKey(e => e.WorkoutLogId);
 
         builder.HasOne<Exercise>()

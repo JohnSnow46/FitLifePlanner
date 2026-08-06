@@ -31,6 +31,17 @@ Template for a new entry:
 
 <!-- Newest entries go directly below this line. -->
 
+### 2026-08-06 — ETAP 3 step 3/3: Progress business rules (closes ETAP 3)
+- ADRs used: ADR-0001 (business rules kept directly on `WorkoutLog`/`MealLog`/
+  `BodyMetricEntry` entities, no Application layer; reused steps 1-2/3's
+  `Domain.Common.ValidationException`; shape adapted to `Create` static factories since
+  these are dated log records, not child-list owners like `WorkoutPlan`/`MealPlan` —
+  `WorkoutLog` additionally got an `AddEntry` method for its `WorkoutLogEntry` children,
+  mirroring `AddExercise`/`AddEntry` from steps 1-2).
+- ADRs read but not used: ADR-0002 (data storage) — no schema/migration change; the
+  `WorkoutLogEntryConfiguration` fluent-mapping fix (`WithMany()` → `WithMany(l =>
+  l.Entries)`) confirmed via a scratch probe migration with empty `Up`/`Down`.
+
 ### 2026-08-06 — ETAP 3 step 2/3: Nutrition business rules
 - ADRs used: ADR-0001 (business rules kept directly on `MealPlan`/`MealPlanEntry`
   entities, no Application layer; reused step 1/3's `Domain.Common.ValidationException`
