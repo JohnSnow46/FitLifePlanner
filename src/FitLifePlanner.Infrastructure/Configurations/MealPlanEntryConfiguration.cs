@@ -11,7 +11,7 @@ public class MealPlanEntryConfiguration : IEntityTypeConfiguration<MealPlanEntry
         builder.HasKey(e => e.Id);
 
         builder.HasOne<MealPlan>()
-            .WithMany()
+            .WithMany(p => p.Entries)
             .HasForeignKey(e => e.MealPlanId);
 
         builder.HasOne<Food>()
