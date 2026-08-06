@@ -31,6 +31,13 @@ Template for a new entry:
 
 <!-- Newest entries go directly below this line. -->
 
+### 2026-08-06 — ETAP 3 step 1/3: Workouts business rules
+- ADRs used: ADR-0001 (business rules kept directly on `WorkoutPlan`/`WorkoutPlanExercise`
+  entities, no Application layer; `Domain` stays free of EF Core/ASP.NET dependencies —
+  new `ValidationException` has no outward references).
+- ADRs read but not used: ADR-0002 (data storage) — no schema/migration change in this
+  task, confirmed via a scratch probe migration with empty `Up`/`Down`.
+
 ### 2026-08-05 — ETAP 1 scaffolding step 3/4: EF Core + SQLite wiring, initial migration
 - ADRs used: ADR-0002 (Code-First EF Core + SQLite, git-ignored `.db` file, migrations
   in `FitLifePlanner.Infrastructure` — implemented `FitLifePlannerDbContext`, 11
