@@ -5,9 +5,20 @@
       "Read",
       "Grep",
       "Glob",
+      "Write",
+      "Edit",
       "Bash(git status *)",
       "Bash(git diff *)",
-      "Bash(git log *)"
+      "Bash(git log *)",
+      "Bash(dotnet --version)",
+      "Bash(dotnet new *)",
+      "Bash(dotnet sln *)",
+      "Bash(dotnet restore*)",
+      "Bash(dotnet build*)",
+      "Bash(dotnet test*)",
+      "Bash(dotnet run*)",
+      "Bash(dotnet ef*)",
+      "Bash(dotnet tool install*)"
     ],
     "deny": [
       "Bash(git add -A)",

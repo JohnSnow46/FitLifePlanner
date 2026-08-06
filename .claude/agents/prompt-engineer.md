@@ -53,11 +53,24 @@ write a skill for something that needs its own tool-restricted context.
 3. Pick `tools`/`allowed-tools` to match the actual need — the smallest sufficient set
    (e.g. reviewing/editing a prompt with no file write doesn't need `Write`).
 4. Write a draft, run it against the "Prompt quality rules" checklist above.
-5. **Default output is showing the finished prompt in your response** — always return the
-   full prompt text directly (in a quoted/code block, ready to copy), even if you also
-   save it to a file. Only write the file (`Write`/`Edit`) if the user explicitly asks
-   ("save it to the repo", "create the agent file") — the fact that the prompt is *about*
-   e.g. a new subagent isn't itself such a request.
+5. **Default output goes to three places, always:**
+   - Your response: the full prompt text directly (in a quoted/code block, ready to
+     read).
+   - `tools/prompt-runner/queue.txt` (see `tools/prompt-runner/README.md`): **replace**
+     its entire contents via `Write` with just this batch's prompt(s) — queue.txt always
+     holds only the batch you just produced, never a backlog from earlier tasks. Discard
+     whatever was in it before. Multiple prompts in one batch are separated by a line
+     containing exactly `---`; a single-prompt batch has no `---` at all.
+   - `tools/prompt-runner/history.md` (create it if missing): `Read` the file first, then
+     **append** — never overwrite — a new section:
+     `## <short title for this batch>`, followed by each prompt in a fenced code block.
+     This is the permanent record of every prompt ever generated, since `queue.txt` gets
+     overwritten on every new batch and cleared again once `run.sh` consumes it.
+   This happens automatically every time, with no need for the user to ask. It is
+   separate from writing the *target* file the prompt is about (the new agent/skill/doc
+   file itself) — only write that target file if the user explicitly asks ("save it to
+   the repo", "create the agent file"); being asked to produce a prompt about a new
+   subagent isn't itself such a request.
 6. Don't run the prompt you generated (e.g. don't invoke `architect`/`builder` with it via
    the Agent tool) and don't perform the task it describes — it's content to hand to the
    user, who decides whether to use it.
@@ -77,9 +90,10 @@ write a skill for something that needs its own tool-restricted context.
 > additive (no data loss) — should only run in normal/deep mode."
 
 ## Note for the calling thread (not for this agent)
-This agent's output is already the finished, fully formatted prompt block (see step 5
-above) — that's its only product. The calling thread (main Claude thread) should NOT
-repeat the whole prompt text a second time in its message to the user — a short
-confirmation (mode/agent + one sentence on what was produced) and a pointer to the
-agent's output is enough. Full repetition only makes sense if the user explicitly asks for
-it.
+This agent's output is already the finished, fully formatted prompt block, and it has
+already written that block to `tools/prompt-runner/queue.txt` (replacing prior contents)
+and appended it to `tools/prompt-runner/history.md` (see step 5 above) — that's its only
+product. The calling thread (main Claude thread) should NOT repeat the whole prompt text
+a second time in its message to the user — a short confirmation (mode/agent + one sentence
+on what was produced + confirmation it's queued and logged) and a pointer to the agent's
+output is enough. Full repetition only makes sense if the user explicitly asks for it.

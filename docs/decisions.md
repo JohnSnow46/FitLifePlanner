@@ -8,8 +8,11 @@ This file is an **index and usage log**, not content. Full ADR text lives one-pe
 
 One line per ADR: number, link, one-sentence summary. Newest at the bottom.
 
-- [ADR-0001](adr/ADR-0001-example.md) — Example ADR showing the Context → Decision →
-  Consequences format. Delete once you have real ADRs.
+- [ADR-0001](adr/ADR-0001-architecture-and-stack.md) — Backend: ASP.NET Core Web API
+  (.NET 10); frontend: Blazor WebAssembly SPA; four-project layout (Domain/
+  Infrastructure/Api/Web), no separate Application/CQRS layer.
+- [ADR-0002](adr/ADR-0002-data-storage.md) — EF Core (Code-First) with SQLite as the
+  local-dev provider; production provider deferred to the hosting decision.
 
 ## ADR Notes
 
@@ -27,3 +30,44 @@ Template for a new entry:
 ```
 
 <!-- Newest entries go directly below this line. -->
+
+### 2026-08-06 — ETAP 3 step 3/3: Progress business rules (closes ETAP 3)
+- ADRs used: ADR-0001 (business rules kept directly on `WorkoutLog`/`MealLog`/
+  `BodyMetricEntry` entities, no Application layer; reused steps 1-2/3's
+  `Domain.Common.ValidationException`; shape adapted to `Create` static factories since
+  these are dated log records, not child-list owners like `WorkoutPlan`/`MealPlan` —
+  `WorkoutLog` additionally got an `AddEntry` method for its `WorkoutLogEntry` children,
+  mirroring `AddExercise`/`AddEntry` from steps 1-2).
+- ADRs read but not used: ADR-0002 (data storage) — no schema/migration change; the
+  `WorkoutLogEntryConfiguration` fluent-mapping fix (`WithMany()` → `WithMany(l =>
+  l.Entries)`) confirmed via a scratch probe migration with empty `Up`/`Down`.
+
+### 2026-08-06 — ETAP 3 step 2/3: Nutrition business rules
+- ADRs used: ADR-0001 (business rules kept directly on `MealPlan`/`MealPlanEntry`
+  entities, no Application layer; reused step 1/3's `Domain.Common.ValidationException`
+  instead of a new type, mirroring `WorkoutPlan.AddExercise` exactly).
+- ADRs read but not used: ADR-0002 (data storage) — no schema/migration change; the
+  `MealPlanEntryConfiguration` fluent-mapping fix (`WithMany()` → `WithMany(p =>
+  p.Entries)`) confirmed via a scratch probe migration with empty `Up`/`Down`.
+
+### 2026-08-06 — ETAP 3 step 1/3: Workouts business rules
+- ADRs used: ADR-0001 (business rules kept directly on `WorkoutPlan`/`WorkoutPlanExercise`
+  entities, no Application layer; `Domain` stays free of EF Core/ASP.NET dependencies —
+  new `ValidationException` has no outward references).
+- ADRs read but not used: ADR-0002 (data storage) — no schema/migration change in this
+  task, confirmed via a scratch probe migration with empty `Up`/`Down`.
+
+### 2026-08-05 — ETAP 1 scaffolding step 3/4: EF Core + SQLite wiring, initial migration
+- ADRs used: ADR-0002 (Code-First EF Core + SQLite, git-ignored `.db` file, migrations
+  in `FitLifePlanner.Infrastructure` — implemented `FitLifePlannerDbContext`, 11
+  `IEntityTypeConfiguration<T>` classes, and the `InitialCreate` migration exactly as
+  decided; `WorkoutLog.WorkoutPlanId` configured `DeleteBehavior.SetNull` per
+  `docs/database.md` §2's history-survives-plan-deletion rule)
+
+### 2026-08-05 — ETAP 1 scaffolding step 2/4: MVP domain entities
+- ADRs used: ADR-0001 (Domain layer purity rule — verified all 12 entities are plain
+  POCOs with zero EF Core/Infrastructure/Api references, per the layering decision)
+
+### 2026-08-05 — ETAP 1: architecture analysis (initial stack/layering/storage decision)
+- ADRs used: ADR-0001, ADR-0002 (created by this task — first real architecture decision
+  for the project; ADR-0001-example.md retired in favor of ADR-0001)

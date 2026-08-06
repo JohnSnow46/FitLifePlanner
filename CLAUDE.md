@@ -1,8 +1,8 @@
 # FitLife Planner
 
 A personal fitness and lifestyle planning app (workout planning, meal/nutrition
-planning, and progress tracking). Stack and architecture are not yet decided — that's
-ETAP 1's job (see "Current status" below and `docs/roadmap.md`).
+planning, and progress tracking). Backend: ASP.NET Core Web API; frontend: Blazor
+WebAssembly SPA; both .NET 10. See `docs/architecture.md` and ADR-0001.
 
 ## Docs (don't duplicate their content here)
 
@@ -100,8 +100,22 @@ doesn't need without an explicit ask.
 
 ## Commands
 
-Not yet defined — depends on the stack chosen in ETAP 1. Will be filled in here and in
-`.claude/settings.json`'s `permissions.allow` once decided (see `docs/development.md`).
+Stack: ASP.NET Core Web API + Blazor WebAssembly, .NET 10; EF Core + SQLite (local dev).
+See ADR-0001, ADR-0002.
+
+| Action | Command |
+|---|---|
+| Restore dependencies | `dotnet restore` |
+| Build | `dotnet build` |
+| Run backend API | `dotnet run --project src/FitLifePlanner.Api` |
+| Run frontend (Blazor WASM) | `dotnet run --project src/FitLifePlanner.Web` |
+| Run tests | `dotnet test` |
+| Format / lint | `dotnet format --verify-no-changes` |
+| Add EF Core migration | `dotnet ef migrations add <Name> --project src/FitLifePlanner.Infrastructure --startup-project src/FitLifePlanner.Api` |
+| Apply migrations | `dotnet ef database update --project src/FitLifePlanner.Infrastructure --startup-project src/FitLifePlanner.Api` |
+
+`src/`/`tests/` layout doesn't exist yet — first `builder` task scaffolds it (see
+`docs/roadmap.md`).
 
 ## Environment
 
@@ -115,10 +129,15 @@ Not yet defined — depends on the stack chosen in ETAP 1. Will be filled in her
 **ETAP 0 (repo & environment setup) — done.** Repo, Claude Code config, base docs
 structure, git workflow, and branches are in place. No business/domain code exists yet.
 
-**ETAP 1 (architecture analysis) — next.** Will decide the stack, module/layer design,
-and data model; fills in `docs/architecture.md`, `docs/database.md`, `docs/api.md`,
-`CLAUDE.md`'s Commands/Environment sections, and `.claude/settings.json` permissions.
-Tracked in `docs/roadmap.md`.
+**ETAP 1 (architecture analysis) — done.** Stack, layering, and data storage are
+decided (ADR-0001, ADR-0002); `docs/architecture.md` and `docs/database.md` are filled
+in. `docs/api.md` and `.claude/settings.json` permissions are still open — the API
+surface and auth mechanism come with ETAP 4. Skeleton is scaffolded: four projects
+(Domain/Infrastructure/Api/Web), 12 domain entities in `Domain`,
+`FitLifePlannerDbContext` + EF Core configurations + applied `InitialCreate` migration
+in `Infrastructure`, and a `FitLifePlanner.Tests` project with a passing DbContext
+smoke test. Next step is ETAP 3 (core domain features / business rules on the
+entities, per ADR-0001 — no separate Application layer). Tracked in `docs/roadmap.md`.
 
 ---
 
