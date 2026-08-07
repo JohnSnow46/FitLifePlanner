@@ -37,6 +37,15 @@ Template for a new entry:
 
 <!-- Newest entries go directly below this line. -->
 
+### 2026-08-07 — ETAP 4 step 1/5: API conventions, error mapping and auth (new ADR-0003)
+- ADRs used: ADR-0001 (kept the no-Application-layer shape — `Api` controllers call
+  domain factories/methods directly; endpoint shape per entity kind mirrors the
+  catalog/owned-plan/dated-log split ETAP 3 already established) and ADR-0002 (auth
+  migration is additive only — `User.PasswordHash` + unique `Email` index, SQLite local
+  dev unaffected).
+- ADRs read but not used: none beyond ADR-0001/0002 — this step produced ADR-0003
+  itself rather than consuming a prior one.
+
 ### 2026-08-06 — ETAP 3 step 3/3: Progress business rules (closes ETAP 3)
 - ADRs used: ADR-0001 (business rules kept directly on `WorkoutLog`/`MealLog`/
   `BodyMetricEntry` entities, no Application layer; reused steps 1-2/3's
