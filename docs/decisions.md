@@ -37,6 +37,20 @@ Template for a new entry:
 
 <!-- Newest entries go directly below this line. -->
 
+### 2026-08-07 — ETAP 4 step 3/5: Workouts controllers
+- ADRs used: ADR-0003 (single `WorkoutsController` per the one-controller-per-feature-area
+  rule, serving both the `Exercise` catalog — flat CRUD, not user-scoped — and owned
+  `WorkoutPlan`/`WorkoutPlanExercise` resources; every owned query scoped via
+  `User.GetUserId()`, ownership violations surfaced as 404 not 403; nested
+  `POST /workout-plans/{planId}/exercises` loads the plan with `.Include(p =>
+  p.Exercises)` before calling `WorkoutPlan.AddExercise`, letting `ValidationException`
+  propagate to `GlobalExceptionHandler` uncaught; `Contracts/Workouts/` DTOs +
+  `WorkoutsMappings.ToResponse()/ToDetailResponse()`, no `Domain` entities returned
+  directly) and ADR-0001 (controller stays thin, `DbContext` used directly, business
+  invariant stays on the domain method).
+- ADRs read but not used: ADR-0002 (storage choice already settled, no schema change in
+  this step).
+
 ### 2026-08-07 — ETAP 4 step 2/5: auth infrastructure + Users controller
 - ADRs used: ADR-0003 (implemented exactly as decided — `NotFoundException` mirroring
   `ValidationException`'s shape, `User.PasswordHash` + unique `Email` index via the
