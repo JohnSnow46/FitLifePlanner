@@ -18,8 +18,9 @@ MVP domain model, one owner (`User`) per row unless noted "shared/global". Full 
 level detail (types, constraints, indexes) is left to the EF Core configurations built
 by `builder`, not spelled out here.
 
-**User** — Id, Name, Email. Owns plans and logs below. (Auth mechanism is out of scope
-here — deferred to the API layer decision, ETAP 4 / `docs/api.md`.)
+**User** — Id, Name, Email, PasswordHash. Owns plans and logs below. `PasswordHash`
+(string, required) and the unique index on `Email` come from the JWT auth decision —
+ADR-0003 / `docs/api.md` §3; no other credential/role columns at MVP.
 
 **Workout planning**
 - `Exercise` (shared/global catalog) — Id, Name, MuscleGroup, Description. Not

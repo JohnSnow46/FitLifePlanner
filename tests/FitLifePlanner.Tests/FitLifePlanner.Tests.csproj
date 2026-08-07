@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.10" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.5" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
@@ -22,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\FitLifePlanner.Domain\FitLifePlanner.Domain.csproj" />
     <ProjectReference Include="..\..\src\FitLifePlanner.Infrastructure\FitLifePlanner.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\FitLifePlanner.Api\FitLifePlanner.Api.csproj" />
   </ItemGroup>
 
 </Project>

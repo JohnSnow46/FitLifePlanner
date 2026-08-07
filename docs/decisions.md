@@ -13,6 +13,12 @@ One line per ADR: number, link, one-sentence summary. Newest at the bottom.
   Infrastructure/Api/Web), no separate Application/CQRS layer.
 - [ADR-0002](adr/ADR-0002-data-storage.md) — EF Core (Code-First) with SQLite as the
   local-dev provider; production provider deferred to the hosting decision.
+- [ADR-0003](adr/ADR-0003-api-conventions-and-auth.md) — REST conventions for `Api`:
+  unversioned `/api/<kebab-plural>` routes on per-feature-area controllers, endpoint
+  shape per entity kind (catalog / owned plan + nested children / append-only log),
+  exception→status mapping (`ValidationException` 400, new `NotFoundException` 404,
+  else 500), `ToResponse()` extension mapping, and JWT bearer auth with
+  `User.PasswordHash`.
 
 ## ADR Notes
 
@@ -30,6 +36,56 @@ Template for a new entry:
 ```
 
 <!-- Newest entries go directly below this line. -->
+
+### 2026-08-07 — ETAP 4 step 4/5: Nutrition controllers
+- ADRs used: ADR-0003 (single `NutritionController` per the one-controller-per-feature-area
+  rule, serving both the `Food` catalog — flat CRUD, not user-scoped — and owned
+  `MealPlan`/`MealPlanEntry` resources; every owned query scoped via `User.GetUserId()`,
+  ownership violations surfaced as 404 not 403; nested
+  `POST /meal-plans/{planId}/entries` loads the plan with `.Include(p => p.Entries)`
+  before calling `MealPlan.AddEntry`, letting `ValidationException` propagate to
+  `GlobalExceptionHandler` uncaught; `Contracts/Nutrition/` DTOs +
+  `NutritionMappings.ToResponse()/ToDetailResponse()`, no `Domain` entities returned
+  directly) and ADR-0001 (controller stays thin, `DbContext` used directly, business
+  invariant stays on the domain method). Mirrors step 3/5's `WorkoutsController` shape
+  exactly, confirmed by `reviewer-lite`.
+- ADRs read but not used: ADR-0002 (storage choice already settled, no schema change in
+  this step).
+
+### 2026-08-07 — ETAP 4 step 3/5: Workouts controllers
+- ADRs used: ADR-0003 (single `WorkoutsController` per the one-controller-per-feature-area
+  rule, serving both the `Exercise` catalog — flat CRUD, not user-scoped — and owned
+  `WorkoutPlan`/`WorkoutPlanExercise` resources; every owned query scoped via
+  `User.GetUserId()`, ownership violations surfaced as 404 not 403; nested
+  `POST /workout-plans/{planId}/exercises` loads the plan with `.Include(p =>
+  p.Exercises)` before calling `WorkoutPlan.AddExercise`, letting `ValidationException`
+  propagate to `GlobalExceptionHandler` uncaught; `Contracts/Workouts/` DTOs +
+  `WorkoutsMappings.ToResponse()/ToDetailResponse()`, no `Domain` entities returned
+  directly) and ADR-0001 (controller stays thin, `DbContext` used directly, business
+  invariant stays on the domain method).
+- ADRs read but not used: ADR-0002 (storage choice already settled, no schema change in
+  this step).
+
+### 2026-08-07 — ETAP 4 step 2/5: auth infrastructure + Users controller
+- ADRs used: ADR-0003 (implemented exactly as decided — `NotFoundException` mirroring
+  `ValidationException`'s shape, `User.PasswordHash` + unique `Email` index via the
+  additive `AddUserAuthFields` migration, `GlobalExceptionHandler` with the
+  Validation→400/NotFound→404/else→500 mapping, hand-rolled JWT bearer auth with
+  `PasswordHasher<User>`, fallback-authenticated-by-default policy, `ClaimsPrincipal.
+  GetUserId()`, and `UsersController` with register/login/me exactly per §2.1/§5) and
+  ADR-0001 (controller stays thin, `DbContext` used directly, no repository
+  abstraction).
+- ADRs read but not used: ADR-0002 (storage choice already settled, nothing new needed
+  beyond the additive migration ADR-0003 already covered).
+
+### 2026-08-07 — ETAP 4 step 1/5: API conventions, error mapping and auth (new ADR-0003)
+- ADRs used: ADR-0001 (kept the no-Application-layer shape — `Api` controllers call
+  domain factories/methods directly; endpoint shape per entity kind mirrors the
+  catalog/owned-plan/dated-log split ETAP 3 already established) and ADR-0002 (auth
+  migration is additive only — `User.PasswordHash` + unique `Email` index, SQLite local
+  dev unaffected).
+- ADRs read but not used: none beyond ADR-0001/0002 — this step produced ADR-0003
+  itself rather than consuming a prior one.
 
 ### 2026-08-06 — ETAP 3 step 3/3: Progress business rules (closes ETAP 3)
 - ADRs used: ADR-0001 (business rules kept directly on `WorkoutLog`/`MealLog`/
