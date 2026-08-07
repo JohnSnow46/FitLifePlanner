@@ -37,6 +37,18 @@ Template for a new entry:
 
 <!-- Newest entries go directly below this line. -->
 
+### 2026-08-07 — ETAP 4 step 2/5: auth infrastructure + Users controller
+- ADRs used: ADR-0003 (implemented exactly as decided — `NotFoundException` mirroring
+  `ValidationException`'s shape, `User.PasswordHash` + unique `Email` index via the
+  additive `AddUserAuthFields` migration, `GlobalExceptionHandler` with the
+  Validation→400/NotFound→404/else→500 mapping, hand-rolled JWT bearer auth with
+  `PasswordHasher<User>`, fallback-authenticated-by-default policy, `ClaimsPrincipal.
+  GetUserId()`, and `UsersController` with register/login/me exactly per §2.1/§5) and
+  ADR-0001 (controller stays thin, `DbContext` used directly, no repository
+  abstraction).
+- ADRs read but not used: ADR-0002 (storage choice already settled, nothing new needed
+  beyond the additive migration ADR-0003 already covered).
+
 ### 2026-08-07 — ETAP 4 step 1/5: API conventions, error mapping and auth (new ADR-0003)
 - ADRs used: ADR-0001 (kept the no-Application-layer shape — `Api` controllers call
   domain factories/methods directly; endpoint shape per entity kind mirrors the
