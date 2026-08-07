@@ -13,6 +13,12 @@ One line per ADR: number, link, one-sentence summary. Newest at the bottom.
   Infrastructure/Api/Web), no separate Application/CQRS layer.
 - [ADR-0002](adr/ADR-0002-data-storage.md) — EF Core (Code-First) with SQLite as the
   local-dev provider; production provider deferred to the hosting decision.
+- [ADR-0003](adr/ADR-0003-api-conventions-and-auth.md) — REST conventions for `Api`:
+  unversioned `/api/<kebab-plural>` routes on per-feature-area controllers, endpoint
+  shape per entity kind (catalog / owned plan + nested children / append-only log),
+  exception→status mapping (`ValidationException` 400, new `NotFoundException` 404,
+  else 500), `ToResponse()` extension mapping, and JWT bearer auth with
+  `User.PasswordHash`.
 
 ## ADR Notes
 
