@@ -37,6 +37,21 @@ Template for a new entry:
 
 <!-- Newest entries go directly below this line. -->
 
+### 2026-08-07 — ETAP 4 step 4/5: Nutrition controllers
+- ADRs used: ADR-0003 (single `NutritionController` per the one-controller-per-feature-area
+  rule, serving both the `Food` catalog — flat CRUD, not user-scoped — and owned
+  `MealPlan`/`MealPlanEntry` resources; every owned query scoped via `User.GetUserId()`,
+  ownership violations surfaced as 404 not 403; nested
+  `POST /meal-plans/{planId}/entries` loads the plan with `.Include(p => p.Entries)`
+  before calling `MealPlan.AddEntry`, letting `ValidationException` propagate to
+  `GlobalExceptionHandler` uncaught; `Contracts/Nutrition/` DTOs +
+  `NutritionMappings.ToResponse()/ToDetailResponse()`, no `Domain` entities returned
+  directly) and ADR-0001 (controller stays thin, `DbContext` used directly, business
+  invariant stays on the domain method). Mirrors step 3/5's `WorkoutsController` shape
+  exactly, confirmed by `reviewer-lite`.
+- ADRs read but not used: ADR-0002 (storage choice already settled, no schema change in
+  this step).
+
 ### 2026-08-07 — ETAP 4 step 3/5: Workouts controllers
 - ADRs used: ADR-0003 (single `WorkoutsController` per the one-controller-per-feature-area
   rule, serving both the `Exercise` catalog — flat CRUD, not user-scoped — and owned
