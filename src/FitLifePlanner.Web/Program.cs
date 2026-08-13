@@ -14,4 +14,7 @@ builder.Services.AddScoped<JwtAuthenticationStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<JwtAuthenticationStateProvider>());
 builder.Services.AddTransient<BearerTokenHandler>();
 
+builder.Services.AddHttpClient<UsersApiClient>(c => c.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]!))
+    .AddHttpMessageHandler<BearerTokenHandler>();
+
 await builder.Build().RunAsync();
