@@ -35,6 +35,18 @@ Template for a new entry:
 - ADRs read but not used: ADR-NNNN (<why it didn't apply>)
 ```
 
+### 2026-08-13 — ETAP 5 step 2/4: token storage, auth state provider, bearer handler
+- ADRs used: ADR-0004 (§3/§4 fixed the exact shape implemented: `TokenStore` wrapping
+  `IJSRuntime` localStorage under key `fitlife.token` with field caching, no
+  `Blazored.LocalStorage`; `JwtAuthenticationStateProvider` decoding the JWT payload
+  client-side with no signature check, dropping the token on missing/malformed/expired
+  `exp`; `BearerTokenHandler` attaching the bearer header and calling `SignOut()` on 401
+  without redirecting; `ApiException(HttpStatusCode, string)` shape; DI registrations
+  mapping `AuthenticationStateProvider` to the concrete scoped instance)
+- ADRs read but not used: ADR-0001 (layering only, no new module boundary crossed),
+  ADR-0003 (backend auth already in place; this step only consumes the JWT shape it
+  produces, no `Api` changes)
+
 <!-- Newest entries go directly below this line. -->
 
 ### 2026-08-07 — ETAP 4 step 4/5: Nutrition controllers
