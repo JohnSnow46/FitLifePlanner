@@ -95,8 +95,8 @@ doesn't need without an explicit ask.
 - Respond in Polish — the project owner communicates in Polish.
 - Git workflow, branch naming, and commit convention (`feat:`/`fix:`/`refactor:`/
   `docs:`/`test:`/`chore:`) → `docs/development.md`. Don't invent a different prefix set.
-- Naming/typing/error-handling conventions are TBD until ETAP 1 picks the stack — once
-  decided, they belong in `.claude/skills/project-conventions/SKILL.md`, not here.
+- Naming/typing/error-handling conventions → `.claude/skills/project-conventions/SKILL.md`
+  (loaded on demand, not duplicated here).
 
 ## Commands
 
@@ -114,8 +114,7 @@ See ADR-0001, ADR-0002.
 | Add EF Core migration | `dotnet ef migrations add <Name> --project src/FitLifePlanner.Infrastructure --startup-project src/FitLifePlanner.Api` |
 | Apply migrations | `dotnet ef database update --project src/FitLifePlanner.Infrastructure --startup-project src/FitLifePlanner.Api` |
 
-`src/`/`tests/` layout doesn't exist yet — first `builder` task scaffolds it (see
-`docs/roadmap.md`).
+`src/`/`tests/` layout is scaffolded (see "Current status" below and `docs/roadmap.md`).
 
 ## Environment
 
@@ -136,8 +135,39 @@ surface and auth mechanism come with ETAP 4. Skeleton is scaffolded: four projec
 (Domain/Infrastructure/Api/Web), 12 domain entities in `Domain`,
 `FitLifePlannerDbContext` + EF Core configurations + applied `InitialCreate` migration
 in `Infrastructure`, and a `FitLifePlanner.Tests` project with a passing DbContext
-smoke test. Next step is ETAP 3 (core domain features / business rules on the
-entities, per ADR-0001 — no separate Application layer). Tracked in `docs/roadmap.md`.
+smoke test.
+
+**ETAP 3 (core domain features) — done.** Business rules added directly on the
+`Domain` entities (ADR-0001, no separate Application layer): `WorkoutPlan.AddExercise`,
+`MealPlan.AddEntry`, and `Create`/`AddEntry` factories on `WorkoutLog`/`MealLog`/
+`BodyMetricEntry`, all throwing `Domain.Common.ValidationException` on invariant
+violations. Unit-tested per entity; no schema/migration change.
+
+**ETAP 4 (API layer) — done.** REST API per ADR-0003 (`docs/api.md`): unversioned
+`/api/<kebab-plural>` routes, `NotFoundException`/`ValidationException` → 404/400 via
+`GlobalExceptionHandler`, JWT bearer auth (`User.PasswordHash`,
+`ClaimsPrincipal.GetUserId()`). Controllers: `UsersController` (register/login/me),
+`WorkoutsController` (`Exercise` catalog + owned `WorkoutPlan`), `NutritionController`
+(`Food` catalog + owned `MealPlan`), and the `Progress` area split across
+`WorkoutLogsController`/`MealLogsController`/`BodyMetricEntriesController` (dated logs,
+append-only + delete). MVP API surface is complete.
+
+**ETAP 5 (frontend foundation & auth) — done.** `FitLifePlanner.Web` per ADR-0004:
+JWT in `localStorage` behind `TokenStore` + `JwtAuthenticationStateProvider`, bearer
+`DelegatingHandler` on typed `<FeatureArea>ApiClient`s, hand-written `Web/Contracts`
+records, CORS policy on `Api`. `UsersApiClient` + Login/Register pages, protected
+routing, auth-aware `NavMenu`, shared `LoadingIndicator`/`ErrorAlert` components.
+Every later frontend stage is mechanical (ADR-0004 Consequences): add
+`Contracts/<FeatureArea>` records → add methods to `<FeatureArea>ApiClient` → add pages
+under `Pages/<FeatureArea>/`.
+
+**ETAP 6 (feature UI) — done.** Workouts (`Exercises`/`WorkoutPlans`/
+`WorkoutPlanDetail`), Nutrition (`Foods`/`MealPlans`/`MealPlanDetail`), Progress
+(`WorkoutLogs`/`WorkoutLogDetail`/`MealLogs`/`BodyMetrics`) pages and a read-only
+dashboard on `Home.razor` (`<AuthorizeView>`-gated summary + welcome view for
+anonymous visitors), all built per ADR-0004's mechanical pattern (typed
+`<FeatureArea>ApiClient` + hand-written `Contracts`). Next stage is ETAP 7, see
+`docs/roadmap.md`.
 
 ---
 

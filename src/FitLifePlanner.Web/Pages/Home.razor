@@ -1,7 +1,170 @@
-﻿@page "/"
+@page "/"
+@using Microsoft.AspNetCore.Components.Authorization
+@using FitLifePlanner.Web.Contracts.Nutrition
+@using FitLifePlanner.Web.Contracts.Progress
+@using FitLifePlanner.Web.Contracts.Workouts
+@using FitLifePlanner.Web.Services
+@inject WorkoutsApiClient WorkoutsApiClient
+@inject NutritionApiClient NutritionApiClient
+@inject ProgressApiClient ProgressApiClient
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<AuthorizeView>
+    <NotAuthorized>
+        <h1>Welcome to FitLife Planner</h1>
+        <p>Plan your workouts, plan your meals, and track your progress in one place.</p>
+        <p>
+            <a href="/login" class="btn btn-primary">Login</a>
+            <a href="/register" class="btn btn-secondary">Register</a>
+        </p>
+    </NotAuthorized>
+    <Authorized>
+        <h1>Dashboard</h1>
 
-Welcome to your new app.
+        <ErrorAlert Message="@errorMessage" />
+
+        @if (isLoading)
+        {
+            <LoadingIndicator />
+        }
+        else
+        {
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Workout Plans</h5>
+                            <p class="card-text display-6">@workoutPlanCount</p>
+                            <a href="/workout-plans">View workout plans</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Meal Plans</h5>
+                            <p class="card-text display-6">@mealPlanCount</p>
+                            <a href="/meal-plans">View meal plans</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h2>Latest Body Metric</h2>
+                @if (latestBodyMetric is null)
+                {
+                    <p>No entries yet.</p>
+                }
+                else
+                {
+                    <p>
+                        @latestBodyMetric.Date.ToLocalTime().ToString("d") &mdash; @latestBodyMetric.Weight kg
+                        @if (latestBodyMetric.BodyFatPercent is not null)
+                        {
+                            <text>, @latestBodyMetric.BodyFatPercent% body fat</text>
+                        }
+                    </p>
+                }
+                <a href="/body-metrics">View body metrics</a>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h2>Recent Workout Logs</h2>
+                    @if (recentWorkoutLogs.Count == 0)
+                    {
+                        <p>No recent workout logs.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-group mb-2">
+                            @foreach (var log in recentWorkoutLogs)
+                            {
+                                <li class="list-group-item">@log.Date.ToLocalTime().ToString("d") &mdash; @log.Notes</li>
+                            }
+                        </ul>
+                    }
+                    <a href="/workout-logs">View workout logs</a>
+                </div>
+                <div class="col-md-6">
+                    <h2>Recent Meal Logs</h2>
+                    @if (recentMealLogs.Count == 0)
+                    {
+                        <p>No recent meal logs.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-group mb-2">
+                            @foreach (var log in recentMealLogs)
+                            {
+                                <li class="list-group-item">@log.Date.ToLocalTime().ToString("d") &mdash; @log.MealType, qty @log.QuantityConsumed</li>
+                            }
+                        </ul>
+                    }
+                    <a href="/meal-logs">View meal logs</a>
+                </div>
+            </div>
+
+            <h2>Quick Links</h2>
+            <ul>
+                <li><a href="/workout-plans">Workout Plans</a></li>
+                <li><a href="/meal-plans">Meal Plans</a></li>
+                <li><a href="/workout-logs">Workout Logs</a></li>
+                <li><a href="/meal-logs">Meal Logs</a></li>
+                <li><a href="/body-metrics">Body Metrics</a></li>
+                <li><a href="/exercises">Exercises</a></li>
+                <li><a href="/foods">Foods</a></li>
+            </ul>
+        }
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    private bool isLoading;
+    private string? errorMessage;
+    private int workoutPlanCount;
+    private int mealPlanCount;
+    private BodyMetricEntryResponse? latestBodyMetric;
+    private IReadOnlyCollection<WorkoutLogResponse> recentWorkoutLogs = [];
+    private IReadOnlyCollection<MealLogResponse> recentMealLogs = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardAsync();
+    }
+
+    private async Task LoadDashboardAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            var logsFrom = DateTime.UtcNow.AddDays(-30);
+            var metricsFrom = DateTime.UtcNow.AddDays(-90);
+
+            var workoutPlansTask = WorkoutsApiClient.GetWorkoutPlansAsync();
+            var mealPlansTask = NutritionApiClient.GetMealPlansAsync();
+            var workoutLogsTask = ProgressApiClient.GetWorkoutLogsAsync(from: logsFrom);
+            var mealLogsTask = ProgressApiClient.GetMealLogsAsync(from: logsFrom);
+            var bodyMetricsTask = ProgressApiClient.GetBodyMetricEntriesAsync(from: metricsFrom);
+
+            await Task.WhenAll(workoutPlansTask, mealPlansTask, workoutLogsTask, mealLogsTask, bodyMetricsTask);
+
+            workoutPlanCount = workoutPlansTask.Result.Count;
+            mealPlanCount = mealPlansTask.Result.Count;
+            recentWorkoutLogs = workoutLogsTask.Result.OrderByDescending(log => log.Date).Take(5).ToList();
+            recentMealLogs = mealLogsTask.Result.OrderByDescending(log => log.Date).Take(5).ToList();
+            latestBodyMetric = bodyMetricsTask.Result.OrderByDescending(entry => entry.Date).FirstOrDefault();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
