@@ -44,3 +44,9 @@ No generic repository/unit-of-work abstraction — `Api`/`Infrastructure` use EF
   and the four-project layering above. See `docs/adr/ADR-0001-architecture-and-stack.md`.
 - **ADR-0002** — Data storage: EF Core + SQLite for local dev, production provider
   deferred to the hosting decision. See `docs/adr/ADR-0002-data-storage.md`.
+- **ADR-0003** — API conventions, error mapping and JWT auth for `Api`. See
+  `docs/api.md` and `docs/adr/ADR-0003-api-conventions-and-auth.md`.
+- **ADR-0004** — `Web` internals: typed API clients + bearer `DelegatingHandler`, JWT in
+  `localStorage` behind a custom `AuthenticationStateProvider`, own `Contracts` records
+  (no shared project), no state-management library; `Api` gains a CORS policy. See
+  `docs/adr/ADR-0004-web-frontend-structure-and-auth.md`.

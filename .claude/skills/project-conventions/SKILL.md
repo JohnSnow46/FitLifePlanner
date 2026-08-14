@@ -6,8 +6,17 @@ description: Detailed coding conventions and architectural patterns for this pro
 # Project Conventions
 
 Applies to the four-project layout from ADR-0001
-(`FitLifePlanner.Domain` → `Infrastructure` → `Api`, `Web`). No code exists yet — these
-are the conventions to start with, not references to precedent.
+(`FitLifePlanner.Domain` → `Infrastructure` → `Api`, `Web`).
+
+## Language conventions
+- Nullable reference types are enabled in every project (`<Nullable>enable</Nullable>`).
+  Don't use the `!` null-forgiving operator except right after a check that already
+  proves non-null.
+- One class/interface/enum per file, filename matches the type name (already the
+  pattern in `Domain`'s feature-area folders — keep it for `Api`/`Web` too).
+- Async methods in `Api`/`Infrastructure` that can be cancelled from an outer scope (HTTP
+  request, background job) take and propagate a `CancellationToken` through the call
+  chain. `Domain` methods stay synchronous (no EF Core/IO) — this doesn't apply there.
 
 ## Naming
 - Types/methods/properties: PascalCase. Private fields: `_camelCase`. Parameters/locals:

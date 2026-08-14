@@ -185,5 +185,7 @@ DI, for PBKDF2 hashing).
   `ClaimsPrincipal` in `src/FitLifePlanner.Api/Common/ClaimsPrincipalExtensions.cs`
   reading `ClaimTypes.NameIdentifier`, throwing `InvalidOperationException` if absent
   (a pipeline misconfiguration, not a client error). No ambient current-user service.
-- `FitLifePlanner.Web` sends `Authorization: Bearer <token>` from its typed API clients;
-  token storage on the SPA side is decided when that layer is built.
+- `FitLifePlanner.Web` sends `Authorization: Bearer <token>` from its typed API clients —
+  attached by a single `DelegatingHandler`, token kept in browser `localStorage`
+  (ADR-0004). Because the SPA is a separate origin, `Api` enables a CORS policy for the
+  origins in `Cors:AllowedOrigins` (no `AllowCredentials` — the token is a header).
