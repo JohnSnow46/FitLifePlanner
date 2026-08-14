@@ -1,0 +1,187 @@
+@page "/exercises"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.ComponentModel.DataAnnotations
+@using FitLifePlanner.Web.Contracts.Workouts
+@using FitLifePlanner.Web.Services
+@inject WorkoutsApiClient WorkoutsApiClient
+
+<PageTitle>Exercises</PageTitle>
+
+<h1>Exercises</h1>
+
+<ErrorAlert Message="@errorMessage" />
+
+<div class="mb-3 d-flex align-items-end gap-2">
+    <div>
+        <label for="muscleGroupFilter" class="form-label">Muscle group</label>
+        <input id="muscleGroupFilter" class="form-control" @bind="muscleGroupFilter" @bind:event="oninput" />
+    </div>
+    <button type="button" class="btn btn-secondary" @onclick="LoadExercisesAsync">Filter</button>
+</div>
+
+@if (isLoading)
+{
+    <LoadingIndicator />
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Muscle group</th>
+                <th>Description</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var exercise in exercises)
+            {
+                <tr>
+                    <td>@exercise.Name</td>
+                    <td>@exercise.MuscleGroup</td>
+                    <td>@exercise.Description</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-primary me-2" @onclick="() => StartEdit(exercise)">Edit</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteExerciseAsync(exercise.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h2>@(editingId is null ? "Add exercise" : "Edit exercise")</h2>
+
+    <EditForm Model="formModel" OnValidSubmit="HandleSubmitAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="name" class="form-label">Name</label>
+            <InputText id="name" class="form-control" @bind-Value="formModel.Name" />
+        </div>
+
+        <div class="mb-3">
+            <label for="muscleGroup" class="form-label">Muscle group</label>
+            <InputText id="muscleGroup" class="form-control" @bind-Value="formModel.MuscleGroup" />
+        </div>
+
+        <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <InputTextArea id="description" class="form-control" @bind-Value="formModel.Description" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">@(editingId is null ? "Add" : "Save")</button>
+        @if (editingId is not null)
+        {
+            <button type="button" class="btn btn-outline-secondary ms-2" @onclick="CancelEdit">Cancel</button>
+        }
+    </EditForm>
+}
+
+@code {
+    private IReadOnlyCollection<ExerciseResponse> exercises = [];
+    private string? muscleGroupFilter;
+    private int? editingId;
+    private readonly ExerciseFormModel formModel = new();
+    private bool isLoading;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadExercisesAsync();
+    }
+
+    private async Task LoadExercisesAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            exercises = await WorkoutsApiClient.GetExercisesAsync(muscleGroupFilter);
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void StartEdit(ExerciseResponse exercise)
+    {
+        editingId = exercise.Id;
+        formModel.Name = exercise.Name;
+        formModel.MuscleGroup = exercise.MuscleGroup;
+        formModel.Description = exercise.Description;
+    }
+
+    private void CancelEdit()
+    {
+        editingId = null;
+        formModel.Name = string.Empty;
+        formModel.MuscleGroup = string.Empty;
+        formModel.Description = string.Empty;
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            if (editingId is null)
+            {
+                await WorkoutsApiClient.CreateExerciseAsync(new CreateExerciseRequest
+                {
+                    Name = formModel.Name,
+                    MuscleGroup = formModel.MuscleGroup,
+                    Description = formModel.Description
+                });
+            }
+            else
+            {
+                await WorkoutsApiClient.UpdateExerciseAsync(editingId.Value, new UpdateExerciseRequest
+                {
+                    Name = formModel.Name,
+                    MuscleGroup = formModel.MuscleGroup,
+                    Description = formModel.Description
+                });
+            }
+
+            CancelEdit();
+            await LoadExercisesAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task DeleteExerciseAsync(int id)
+    {
+        errorMessage = null;
+        try
+        {
+            await WorkoutsApiClient.DeleteExerciseAsync(id);
+            await LoadExercisesAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private sealed class ExerciseFormModel
+    {
+        [Required]
+        public string Name { get; set; } = string.Empty;
+
+        [Required]
+        public string MuscleGroup { get; set; } = string.Empty;
+
+        [Required]
+        public string Description { get; set; } = string.Empty;
+    }
+}

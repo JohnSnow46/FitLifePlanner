@@ -1,0 +1,249 @@
+@page "/workout-plans/{PlanId:int}"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.ComponentModel.DataAnnotations
+@using FitLifePlanner.Web.Contracts.Workouts
+@using FitLifePlanner.Web.Services
+@inject WorkoutsApiClient WorkoutsApiClient
+@inject NavigationManager NavigationManager
+
+<PageTitle>Workout Plan</PageTitle>
+
+<ErrorAlert Message="@errorMessage" />
+
+@if (isLoading)
+{
+    <LoadingIndicator />
+}
+else if (plan is not null)
+{
+    <h1>@plan.Name</h1>
+
+    <EditForm Model="renameFormModel" OnValidSubmit="HandleRenameAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="name" class="form-label">Name</label>
+            <InputText id="name" class="form-control" @bind-Value="renameFormModel.Name" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Rename</button>
+    </EditForm>
+
+    <h2 class="mt-4">Exercises</h2>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Exercise</th>
+                <th>Order</th>
+                <th>Sets</th>
+                <th>Reps</th>
+                <th>Weight</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var planExercise in plan.Exercises)
+            {
+                <tr>
+                    <td>@ExerciseName(planExercise.ExerciseId)</td>
+                    <td>@planExercise.Order</td>
+                    <td>@planExercise.TargetSets</td>
+                    <td>@planExercise.TargetReps</td>
+                    <td>@planExercise.TargetWeight</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveExerciseAsync(planExercise.Id)">Remove</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h3>Add exercise</h3>
+
+    <EditForm Model="addExerciseFormModel" OnValidSubmit="HandleAddExerciseAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="exercise" class="form-label">Exercise</label>
+            <InputSelect id="exercise" class="form-select" @bind-Value="addExerciseFormModel.ExerciseId">
+                <option value="0">-- select --</option>
+                @foreach (var exercise in exerciseCatalog)
+                {
+                    <option value="@exercise.Id">@exercise.Name</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label for="order" class="form-label">Order</label>
+            <InputNumber id="order" class="form-control" @bind-Value="addExerciseFormModel.Order" />
+        </div>
+
+        <div class="mb-3">
+            <label for="targetSets" class="form-label">Target sets</label>
+            <InputNumber id="targetSets" class="form-control" @bind-Value="addExerciseFormModel.TargetSets" />
+        </div>
+
+        <div class="mb-3">
+            <label for="targetReps" class="form-label">Target reps</label>
+            <InputNumber id="targetReps" class="form-control" @bind-Value="addExerciseFormModel.TargetReps" />
+        </div>
+
+        <div class="mb-3">
+            <label for="targetWeight" class="form-label">Target weight</label>
+            <InputNumber id="targetWeight" class="form-control" @bind-Value="addExerciseFormModel.TargetWeight" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Add exercise</button>
+    </EditForm>
+
+    <h2 class="mt-4">Danger zone</h2>
+
+    @if (confirmingDelete)
+    {
+        <p>Are you sure you want to delete this plan?</p>
+        <button type="button" class="btn btn-danger me-2" @onclick="DeletePlanAsync">Confirm delete</button>
+        <button type="button" class="btn btn-outline-secondary" @onclick="() => confirmingDelete = false">Cancel</button>
+    }
+    else
+    {
+        <button type="button" class="btn btn-outline-danger" @onclick="() => confirmingDelete = true">Delete plan</button>
+    }
+}
+
+@code {
+    [Parameter]
+    public int PlanId { get; set; }
+
+    private WorkoutPlanDetailResponse? plan;
+    private IReadOnlyCollection<ExerciseResponse> exerciseCatalog = [];
+    private readonly RenameFormModel renameFormModel = new();
+    private readonly AddExerciseFormModel addExerciseFormModel = new();
+    private bool isLoading;
+    private bool confirmingDelete;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            plan = await WorkoutsApiClient.GetWorkoutPlanAsync(PlanId);
+            exerciseCatalog = await WorkoutsApiClient.GetExercisesAsync();
+            renameFormModel.Name = plan.Name;
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string ExerciseName(int exerciseId) =>
+        exerciseCatalog.FirstOrDefault(e => e.Id == exerciseId)?.Name ?? $"#{exerciseId}";
+
+    private async Task HandleRenameAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            await WorkoutsApiClient.UpdateWorkoutPlanAsync(PlanId, new UpdateWorkoutPlanRequest { Name = renameFormModel.Name });
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task HandleAddExerciseAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            await WorkoutsApiClient.AddWorkoutPlanExerciseAsync(PlanId, new AddWorkoutPlanExerciseRequest
+            {
+                ExerciseId = addExerciseFormModel.ExerciseId,
+                Order = addExerciseFormModel.Order,
+                TargetSets = addExerciseFormModel.TargetSets,
+                TargetReps = addExerciseFormModel.TargetReps,
+                TargetWeight = addExerciseFormModel.TargetWeight
+            });
+            addExerciseFormModel.ExerciseId = 0;
+            addExerciseFormModel.Order = 0;
+            addExerciseFormModel.TargetSets = 0;
+            addExerciseFormModel.TargetReps = 0;
+            addExerciseFormModel.TargetWeight = 0;
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task RemoveExerciseAsync(int planExerciseId)
+    {
+        errorMessage = null;
+        try
+        {
+            await WorkoutsApiClient.RemoveWorkoutPlanExerciseAsync(PlanId, planExerciseId);
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task DeletePlanAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            await WorkoutsApiClient.DeleteWorkoutPlanAsync(PlanId);
+            NavigationManager.NavigateTo("/workout-plans");
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+            confirmingDelete = false;
+        }
+    }
+
+    private sealed class RenameFormModel
+    {
+        [Required]
+        public string Name { get; set; } = string.Empty;
+    }
+
+    private sealed class AddExerciseFormModel
+    {
+        [Range(1, int.MaxValue, ErrorMessage = "Select an exercise.")]
+        public int ExerciseId { get; set; }
+
+        [Range(0, int.MaxValue)]
+        public int Order { get; set; }
+
+        [Range(0, int.MaxValue)]
+        public int TargetSets { get; set; }
+
+        [Range(0, int.MaxValue)]
+        public int TargetReps { get; set; }
+
+        [Range(0, double.MaxValue)]
+        public decimal TargetWeight { get; set; }
+    }
+}
