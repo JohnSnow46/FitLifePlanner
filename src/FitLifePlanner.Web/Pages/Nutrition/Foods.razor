@@ -1,0 +1,220 @@
+@page "/foods"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.ComponentModel.DataAnnotations
+@using FitLifePlanner.Web.Contracts.Nutrition
+@using FitLifePlanner.Web.Services
+@inject NutritionApiClient NutritionApiClient
+
+<PageTitle>Foods</PageTitle>
+
+<h1>Foods</h1>
+
+<ErrorAlert Message="@errorMessage" />
+
+@if (isLoading)
+{
+    <LoadingIndicator />
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Unit</th>
+                <th>Calories/unit</th>
+                <th>Protein/unit</th>
+                <th>Carbs/unit</th>
+                <th>Fat/unit</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var food in foods)
+            {
+                <tr>
+                    <td>@food.Name</td>
+                    <td>@food.Unit</td>
+                    <td>@food.CaloriesPerUnit</td>
+                    <td>@food.ProteinPerUnit</td>
+                    <td>@food.CarbsPerUnit</td>
+                    <td>@food.FatPerUnit</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-primary me-2" @onclick="() => StartEdit(food)">Edit</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteFoodAsync(food.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h2>@(editingId is null ? "Add food" : "Edit food")</h2>
+
+    <EditForm Model="formModel" OnValidSubmit="HandleSubmitAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="name" class="form-label">Name</label>
+            <InputText id="name" class="form-control" @bind-Value="formModel.Name" />
+        </div>
+
+        <div class="mb-3">
+            <label for="unit" class="form-label">Unit</label>
+            <InputText id="unit" class="form-control" @bind-Value="formModel.Unit" />
+        </div>
+
+        <div class="mb-3">
+            <label for="caloriesPerUnit" class="form-label">Calories per unit</label>
+            <InputNumber id="caloriesPerUnit" class="form-control" @bind-Value="formModel.CaloriesPerUnit" />
+        </div>
+
+        <div class="mb-3">
+            <label for="proteinPerUnit" class="form-label">Protein per unit</label>
+            <InputNumber id="proteinPerUnit" class="form-control" @bind-Value="formModel.ProteinPerUnit" />
+        </div>
+
+        <div class="mb-3">
+            <label for="carbsPerUnit" class="form-label">Carbs per unit</label>
+            <InputNumber id="carbsPerUnit" class="form-control" @bind-Value="formModel.CarbsPerUnit" />
+        </div>
+
+        <div class="mb-3">
+            <label for="fatPerUnit" class="form-label">Fat per unit</label>
+            <InputNumber id="fatPerUnit" class="form-control" @bind-Value="formModel.FatPerUnit" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">@(editingId is null ? "Add" : "Save")</button>
+        @if (editingId is not null)
+        {
+            <button type="button" class="btn btn-outline-secondary ms-2" @onclick="CancelEdit">Cancel</button>
+        }
+    </EditForm>
+}
+
+@code {
+    private IReadOnlyCollection<FoodResponse> foods = [];
+    private int? editingId;
+    private readonly FoodFormModel formModel = new();
+    private bool isLoading;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFoodsAsync();
+    }
+
+    private async Task LoadFoodsAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            foods = await NutritionApiClient.GetFoodsAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void StartEdit(FoodResponse food)
+    {
+        editingId = food.Id;
+        formModel.Name = food.Name;
+        formModel.Unit = food.Unit;
+        formModel.CaloriesPerUnit = food.CaloriesPerUnit;
+        formModel.ProteinPerUnit = food.ProteinPerUnit;
+        formModel.CarbsPerUnit = food.CarbsPerUnit;
+        formModel.FatPerUnit = food.FatPerUnit;
+    }
+
+    private void CancelEdit()
+    {
+        editingId = null;
+        formModel.Name = string.Empty;
+        formModel.Unit = string.Empty;
+        formModel.CaloriesPerUnit = 0;
+        formModel.ProteinPerUnit = 0;
+        formModel.CarbsPerUnit = 0;
+        formModel.FatPerUnit = 0;
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            if (editingId is null)
+            {
+                await NutritionApiClient.CreateFoodAsync(new CreateFoodRequest
+                {
+                    Name = formModel.Name,
+                    Unit = formModel.Unit,
+                    CaloriesPerUnit = formModel.CaloriesPerUnit,
+                    ProteinPerUnit = formModel.ProteinPerUnit,
+                    CarbsPerUnit = formModel.CarbsPerUnit,
+                    FatPerUnit = formModel.FatPerUnit
+                });
+            }
+            else
+            {
+                await NutritionApiClient.UpdateFoodAsync(editingId.Value, new UpdateFoodRequest
+                {
+                    Name = formModel.Name,
+                    Unit = formModel.Unit,
+                    CaloriesPerUnit = formModel.CaloriesPerUnit,
+                    ProteinPerUnit = formModel.ProteinPerUnit,
+                    CarbsPerUnit = formModel.CarbsPerUnit,
+                    FatPerUnit = formModel.FatPerUnit
+                });
+            }
+
+            CancelEdit();
+            await LoadFoodsAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task DeleteFoodAsync(int id)
+    {
+        errorMessage = null;
+        try
+        {
+            await NutritionApiClient.DeleteFoodAsync(id);
+            await LoadFoodsAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private sealed class FoodFormModel
+    {
+        [Required]
+        public string Name { get; set; } = string.Empty;
+
+        [Required]
+        public string Unit { get; set; } = string.Empty;
+
+        [Required]
+        public decimal CaloriesPerUnit { get; set; }
+
+        [Required]
+        public decimal ProteinPerUnit { get; set; }
+
+        [Required]
+        public decimal CarbsPerUnit { get; set; }
+
+        [Required]
+        public decimal FatPerUnit { get; set; }
+    }
+}
