@@ -19,6 +19,10 @@ One line per ADR: number, link, one-sentence summary. Newest at the bottom.
   exception→status mapping (`ValidationException` 400, new `NotFoundException` 404,
   else 500), `ToResponse()` extension mapping, and JWT bearer auth with
   `User.PasswordHash`.
+- [ADR-0004](adr/ADR-0004-web-frontend-structure-and-auth.md) — `Web` frontend: JWT in
+  `localStorage` behind a `TokenStore` + custom `AuthenticationStateProvider`, bearer
+  `DelegatingHandler` on typed `<FeatureArea>ApiClient`s, own `Contracts` records (no
+  shared project), no state-management library, and a CORS policy on `Api`.
 
 ## ADR Notes
 
@@ -34,6 +38,47 @@ Template for a new entry:
 - ADRs used: ADR-NNNN (<one-line impact on the implementation>)
 - ADRs read but not used: ADR-NNNN (<why it didn't apply>)
 ```
+
+### 2026-08-14 — ETAP 6 step 3/4: Progress feature UI
+- ADRs used: ADR-0004 (§2 wire-model shape — hand-written `Web/Contracts/Progress`
+  records matching `Api/Contracts/Progress` 1:1; `MealLogResponse`/
+  `CreateMealLogRequest` reuse the existing `Web.Contracts.Nutrition.MealType` via
+  `using` rather than redefining it; §2's `JsonStringEnumConverter` requirement reused
+  from the Nutrition step's local `JsonSerializerOptions` pattern; §3 typed-client
+  pattern reused from `WorkoutsApiClient`/`NutritionApiClient`; §4 auth usage — all
+  four pages carry `[Authorize]`; Consequences — mechanical recipe, plus these three
+  resources (`WorkoutLog`/`MealLog`/`BodyMetricEntry`) have no `PUT` at all — append-
+  only logs, create+delete only, no rename/edit form anywhere)
+- ADRs read but not used: ADR-0001/ADR-0003 (consumes the existing Progress endpoints
+  as-is, no `Api`/`Domain` change this step), ADR-0002 (no schema change)
+
+### 2026-08-14 — ETAP 6 step 2/4: Nutrition feature UI
+- ADRs used: ADR-0004 (§2 wire-model shape — hand-written `Web/Contracts/Nutrition`
+  records matching `Api/Contracts/Nutrition` 1:1, plus a client-side `MealType` enum
+  duplicating `Domain.Nutrition.MealType` since `Web` has no project reference to
+  `Domain`; §2's `JsonStringEnumConverter` requirement — no shared
+  `JsonSerializerOptions` existed yet since Workouts had no enums, so a local
+  `JsonSerializerOptions` with `JsonStringEnumConverter` was added inside
+  `NutritionApiClient` and passed explicitly to every `*AsJsonAsync` call for
+  `MealType`/`DayOfWeek`; §3 typed-client pattern reused from `WorkoutsApiClient`;
+  Consequences — same mechanical recipe and delete+re-add rule for
+  `MealPlanEntry`)
+- ADRs read but not used: ADR-0001/ADR-0003 (consumes the existing Nutrition
+  endpoints as-is, no `Api`/`Domain` change this step), ADR-0002 (no schema change)
+
+### 2026-08-14 — ETAP 6 step 1/4: Workouts feature UI
+- ADRs used: ADR-0004 (§2 wire-model shape — hand-written `Web/Contracts/Workouts`
+  records matching `Api/Contracts/Workouts` 1:1; §3 typed-client pattern —
+  `WorkoutsApiClient(HttpClient)` registered via `AddHttpClient<WorkoutsApiClient>` +
+  `.AddHttpMessageHandler<BearerTokenHandler>()`, `ReadResponseAsync`/
+  `ExtractErrorMessageAsync` helpers duplicated rather than extracted to a shared base,
+  per the "only one client existed before this" note; §4 auth usage — pages carry
+  `[Authorize]`, links live in `NavMenu`'s `<Authorized>` block; Consequences —
+  followed the documented mechanical recipe (Contracts → client methods → pages) and
+  the "no `PUT` on plan children, edit = delete + re-add" rule for
+  `WorkoutPlanExercise`)
+- ADRs read but not used: ADR-0001/ADR-0003 (consumes the existing Workouts endpoints
+  as-is, no `Api`/`Domain` change this step), ADR-0002 (no schema change)
 
 ### 2026-08-13 — ETAP 5 step 4/4: Users API client, Login/Register pages, closes ETAP 5
 - ADRs used: ADR-0004 (§2 wire-model shape — hand-written `Web/Contracts/Users` records
@@ -65,6 +110,23 @@ Template for a new entry:
   produces, no `Api` changes)
 
 <!-- Newest entries go directly below this line. -->
+
+### 2026-08-07 — ETAP 4 step 5/5: Progress controllers (closes ETAP 4)
+- ADRs used: ADR-0003 (dated-log endpoint shape — append-only plus delete, no `PUT` —
+  applied to all three `Progress` resources; `WorkoutLog`/`MealLog`/`BodyMetricEntry`
+  each got their own controller (`WorkoutLogsController`/`MealLogsController`/
+  `BodyMetricEntriesController`) rather than one shared `ProgressController`, since the
+  three resources don't nest under each other the way `Exercise`→`WorkoutPlan` does under
+  `Workouts`; every query scoped via `User.GetUserId()`, ownership violations surfaced as
+  404 via `NotFoundException`; nested `POST /workout-logs/{logId}/entries` and
+  `DELETE .../entries/{entryId}` mirror the owned-plan nested-child pattern, calling
+  `WorkoutLog.AddEntry` with `.Include(l => l.Entries)` loaded first; `Contracts/Progress/`
+  DTOs + `ProgressMappings.ToResponse()/ToDetailResponse()`) and ADR-0001 (controllers
+  stay thin, `DbContext` used directly, business invariants stay on the domain
+  methods/factories). Mirrors steps 3-4/5's shape, confirmed by `reviewer-lite`. This was
+  the last ETAP 4 step — API layer (`docs/api.md`) is now complete for the MVP scope.
+- ADRs read but not used: ADR-0002 (storage choice already settled, no schema change in
+  this step).
 
 ### 2026-08-07 — ETAP 4 step 4/5: Nutrition controllers
 - ADRs used: ADR-0003 (single `NutritionController` per the one-controller-per-feature-area

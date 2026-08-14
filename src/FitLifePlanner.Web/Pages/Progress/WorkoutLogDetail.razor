@@ -1,0 +1,214 @@
+@page "/workout-logs/{LogId:int}"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.ComponentModel.DataAnnotations
+@using FitLifePlanner.Web.Contracts.Progress
+@using FitLifePlanner.Web.Contracts.Workouts
+@using FitLifePlanner.Web.Services
+@inject ProgressApiClient ProgressApiClient
+@inject WorkoutsApiClient WorkoutsApiClient
+@inject NavigationManager NavigationManager
+
+<PageTitle>Workout Log</PageTitle>
+
+<ErrorAlert Message="@errorMessage" />
+
+@if (isLoading)
+{
+    <LoadingIndicator />
+}
+else if (log is not null)
+{
+    <h1>@log.Date.ToLocalTime().ToString("d")</h1>
+    <p>@log.Notes</p>
+    <p>Workout plan: @PlanName(log.WorkoutPlanId)</p>
+
+    <h2 class="mt-4">Entries</h2>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Exercise</th>
+                <th>Sets</th>
+                <th>Reps</th>
+                <th>Weight</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var entry in log.Entries)
+            {
+                <tr>
+                    <td>@ExerciseName(entry.ExerciseId)</td>
+                    <td>@entry.SetsCompleted</td>
+                    <td>@entry.RepsCompleted</td>
+                    <td>@entry.WeightUsed</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveEntryAsync(entry.Id)">Remove</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h3>Add entry</h3>
+
+    <EditForm Model="addEntryFormModel" OnValidSubmit="HandleAddEntryAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="exercise" class="form-label">Exercise</label>
+            <InputSelect id="exercise" class="form-select" @bind-Value="addEntryFormModel.ExerciseId">
+                <option value="0">-- select --</option>
+                @foreach (var exercise in exerciseCatalog)
+                {
+                    <option value="@exercise.Id">@exercise.Name</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label for="setsCompleted" class="form-label">Sets completed</label>
+            <InputNumber id="setsCompleted" class="form-control" @bind-Value="addEntryFormModel.SetsCompleted" />
+        </div>
+
+        <div class="mb-3">
+            <label for="repsCompleted" class="form-label">Reps completed</label>
+            <InputNumber id="repsCompleted" class="form-control" @bind-Value="addEntryFormModel.RepsCompleted" />
+        </div>
+
+        <div class="mb-3">
+            <label for="weightUsed" class="form-label">Weight used</label>
+            <InputNumber id="weightUsed" class="form-control" @bind-Value="addEntryFormModel.WeightUsed" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Add entry</button>
+    </EditForm>
+
+    <h2 class="mt-4">Danger zone</h2>
+
+    @if (confirmingDelete)
+    {
+        <p>Are you sure you want to delete this log?</p>
+        <button type="button" class="btn btn-danger me-2" @onclick="DeleteLogAsync">Confirm delete</button>
+        <button type="button" class="btn btn-outline-secondary" @onclick="() => confirmingDelete = false">Cancel</button>
+    }
+    else
+    {
+        <button type="button" class="btn btn-outline-danger" @onclick="() => confirmingDelete = true">Delete log</button>
+    }
+}
+
+@code {
+    [Parameter]
+    public int LogId { get; set; }
+
+    private WorkoutLogDetailResponse? log;
+    private IReadOnlyCollection<WorkoutPlanResponse> workoutPlans = [];
+    private IReadOnlyCollection<ExerciseResponse> exerciseCatalog = [];
+    private readonly AddEntryFormModel addEntryFormModel = new();
+    private bool isLoading;
+    private bool confirmingDelete;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            log = await ProgressApiClient.GetWorkoutLogAsync(LogId);
+            workoutPlans = await WorkoutsApiClient.GetWorkoutPlansAsync();
+            exerciseCatalog = await WorkoutsApiClient.GetExercisesAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string PlanName(int? workoutPlanId) =>
+        workoutPlanId is null
+            ? "-"
+            : workoutPlans.FirstOrDefault(p => p.Id == workoutPlanId)?.Name ?? $"#{workoutPlanId}";
+
+    private string ExerciseName(int exerciseId) =>
+        exerciseCatalog.FirstOrDefault(e => e.Id == exerciseId)?.Name ?? $"#{exerciseId}";
+
+    private async Task HandleAddEntryAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            await ProgressApiClient.AddWorkoutLogEntryAsync(LogId, new AddWorkoutLogEntryRequest
+            {
+                ExerciseId = addEntryFormModel.ExerciseId,
+                SetsCompleted = addEntryFormModel.SetsCompleted,
+                RepsCompleted = addEntryFormModel.RepsCompleted,
+                WeightUsed = addEntryFormModel.WeightUsed
+            });
+            addEntryFormModel.ExerciseId = 0;
+            addEntryFormModel.SetsCompleted = 0;
+            addEntryFormModel.RepsCompleted = 0;
+            addEntryFormModel.WeightUsed = 0;
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task RemoveEntryAsync(int entryId)
+    {
+        errorMessage = null;
+        try
+        {
+            await ProgressApiClient.RemoveWorkoutLogEntryAsync(LogId, entryId);
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task DeleteLogAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            await ProgressApiClient.DeleteWorkoutLogAsync(LogId);
+            NavigationManager.NavigateTo("/workout-logs");
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+            confirmingDelete = false;
+        }
+    }
+
+    private sealed class AddEntryFormModel
+    {
+        [Range(1, int.MaxValue, ErrorMessage = "Select an exercise.")]
+        public int ExerciseId { get; set; }
+
+        [Range(1, int.MaxValue)]
+        public int SetsCompleted { get; set; }
+
+        [Range(1, int.MaxValue)]
+        public int RepsCompleted { get; set; }
+
+        [Range(0, double.MaxValue)]
+        public decimal WeightUsed { get; set; }
+    }
+}
