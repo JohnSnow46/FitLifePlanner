@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\src\FitLifePlanner.Domain\FitLifePlanner.Domain.csproj" />
     <ProjectReference Include="..\..\src\FitLifePlanner.Infrastructure\FitLifePlanner.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\FitLifePlanner.Api\FitLifePlanner.Api.csproj" />
+    <ProjectReference Include="..\..\src\FitLifePlanner.Web\FitLifePlanner.Web.csproj" />
   </ItemGroup>
 
 </Project>

@@ -35,6 +35,35 @@ Template for a new entry:
 - ADRs read but not used: ADR-NNNN (<why it didn't apply>)
 ```
 
+### 2026-08-13 — ETAP 5 step 4/4: Users API client, Login/Register pages, closes ETAP 5
+- ADRs used: ADR-0004 (§2 wire-model shape — hand-written `Web/Contracts/Users` records
+  matching `Api/Contracts/Users` 1:1, only the four DTOs the pages need, no
+  `UserUpdateRequest`; §3 typed-client pattern — `UsersApiClient(HttpClient)` registered via
+  `AddHttpClient<UsersApiClient>` + `.AddHttpMessageHandler<BearerTokenHandler>()`, errors
+  surfaced as `ApiException` built from `ProblemDetails.detail` with a reason-phrase
+  fallback; §4 auth usage — pages call `JwtAuthenticationStateProvider.SignIn` on success and
+  rely on `[AllowAnonymous]`/`RedirectToLogin`'s `returnUrl` already wired in step 3/4)
+- ADRs read but not used: ADR-0001 (layering only, no new module boundary), ADR-0003
+  (consumes the existing Users endpoints/DTOs as-is, no `Api` change this step)
+- Note: manual verification surfaced that `TokenService` (ETAP 4) issues the id claim as
+  `ClaimTypes.NameIdentifier` (long URI key), not the short `sub` claim ADR-0004 §4
+  describes — `JwtAuthenticationStateProvider` silently ends up without a
+  `ClaimTypes.NameIdentifier` claim client-side (email claim still parses fine, login/logout/
+  refresh all work since nothing today reads that claim). Left unfixed as out of this step's
+  scope; worth a follow-up before any feature needs the client-side user id from the token.
+
+### 2026-08-13 — ETAP 5 step 2/4: token storage, auth state provider, bearer handler
+- ADRs used: ADR-0004 (§3/§4 fixed the exact shape implemented: `TokenStore` wrapping
+  `IJSRuntime` localStorage under key `fitlife.token` with field caching, no
+  `Blazored.LocalStorage`; `JwtAuthenticationStateProvider` decoding the JWT payload
+  client-side with no signature check, dropping the token on missing/malformed/expired
+  `exp`; `BearerTokenHandler` attaching the bearer header and calling `SignOut()` on 401
+  without redirecting; `ApiException(HttpStatusCode, string)` shape; DI registrations
+  mapping `AuthenticationStateProvider` to the concrete scoped instance)
+- ADRs read but not used: ADR-0001 (layering only, no new module boundary crossed),
+  ADR-0003 (backend auth already in place; this step only consumes the JWT shape it
+  produces, no `Api` changes)
+
 <!-- Newest entries go directly below this line. -->
 
 ### 2026-08-07 — ETAP 4 step 4/5: Nutrition controllers
