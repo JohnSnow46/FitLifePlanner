@@ -70,6 +70,10 @@ a cost-tiered agent pipeline (`.claude/agents/`) and an ADR-backed decision log
 (`docs/decisions.md` + `docs/adr/`). See [CLAUDE.md](CLAUDE.md) for the work-mode
 classification (fast/normal/deep) and how docs are read.
 
+This repo also has the [dotnet-skills](https://github.com/Aaronontheweb/dotnet-skills)
+plugin installed (user scope) for additional .NET-specific skills on top of the
+template's generic ones.
+
 ## License
 
 [MIT](LICENSE)

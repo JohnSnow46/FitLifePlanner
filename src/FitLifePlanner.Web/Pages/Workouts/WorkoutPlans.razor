@@ -1,0 +1,104 @@
+@page "/workout-plans"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.ComponentModel.DataAnnotations
+@using FitLifePlanner.Web.Contracts.Workouts
+@using FitLifePlanner.Web.Services
+@inject WorkoutsApiClient WorkoutsApiClient
+
+<PageTitle>Workout Plans</PageTitle>
+
+<h1>Workout Plans</h1>
+
+<ErrorAlert Message="@errorMessage" />
+
+@if (isLoading)
+{
+    <LoadingIndicator />
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Created</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var plan in plans)
+            {
+                <tr>
+                    <td>@plan.Name</td>
+                    <td>@plan.CreatedAt.ToLocalTime().ToString("g")</td>
+                    <td><a href="/workout-plans/@plan.Id">Details</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h2>New plan</h2>
+
+    <EditForm Model="formModel" OnValidSubmit="HandleSubmitAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="name" class="form-label">Name</label>
+            <InputText id="name" class="form-control" @bind-Value="formModel.Name" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Create</button>
+    </EditForm>
+}
+
+@code {
+    private IReadOnlyCollection<WorkoutPlanResponse> plans = [];
+    private readonly WorkoutPlanFormModel formModel = new();
+    private bool isLoading;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPlansAsync();
+    }
+
+    private async Task LoadPlansAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            plans = await WorkoutsApiClient.GetWorkoutPlansAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            await WorkoutsApiClient.CreateWorkoutPlanAsync(new CreateWorkoutPlanRequest { Name = formModel.Name });
+            formModel.Name = string.Empty;
+            await LoadPlansAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private sealed class WorkoutPlanFormModel
+    {
+        [Required]
+        public string Name { get; set; } = string.Empty;
+    }
+}

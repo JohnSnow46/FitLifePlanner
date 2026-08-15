@@ -1,0 +1,24 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace FitLifePlanner.Web.Contracts.Nutrition;
+
+public record CreateFoodRequest
+{
+    [Required]
+    public string Name { get; init; } = string.Empty;
+
+    [Required]
+    public string Unit { get; init; } = string.Empty;
+
+    [Required]
+    public decimal CaloriesPerUnit { get; init; }
+
+    [Required]
+    public decimal ProteinPerUnit { get; init; }
+
+    [Required]
+    public decimal CarbsPerUnit { get; init; }
+
+    [Required]
+    public decimal FatPerUnit { get; init; }
+}

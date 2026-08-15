@@ -1,0 +1,188 @@
+@page "/workout-logs"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.ComponentModel.DataAnnotations
+@using FitLifePlanner.Web.Contracts.Progress
+@using FitLifePlanner.Web.Contracts.Workouts
+@using FitLifePlanner.Web.Services
+@inject ProgressApiClient ProgressApiClient
+@inject WorkoutsApiClient WorkoutsApiClient
+
+<PageTitle>Workout Logs</PageTitle>
+
+<h1>Workout Logs</h1>
+
+<ErrorAlert Message="@errorMessage" />
+
+<div class="row mb-3">
+    <div class="col-auto">
+        <label for="from" class="form-label">From</label>
+        <input id="from" type="date" class="form-control" @bind="fromFilter" />
+    </div>
+    <div class="col-auto">
+        <label for="to" class="form-label">To</label>
+        <input id="to" type="date" class="form-control" @bind="toFilter" />
+    </div>
+    <div class="col-auto align-self-end">
+        <button type="button" class="btn btn-outline-secondary" @onclick="LoadLogsAsync">Filter</button>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <LoadingIndicator />
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Notes</th>
+                <th>Workout Plan</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var log in logs)
+            {
+                <tr>
+                    <td>@log.Date.ToLocalTime().ToString("d")</td>
+                    <td>@log.Notes</td>
+                    <td>@PlanName(log.WorkoutPlanId)</td>
+                    <td>
+                        <a href="/workout-logs/@log.Id" class="me-2">Details</a>
+                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteLogAsync(log.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h2>New log</h2>
+
+    <EditForm Model="formModel" OnValidSubmit="HandleSubmitAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="date" class="form-label">Date</label>
+            <InputDate id="date" class="form-control" @bind-Value="formModel.Date" />
+        </div>
+
+        <div class="mb-3">
+            <label for="notes" class="form-label">Notes</label>
+            <InputText id="notes" class="form-control" @bind-Value="formModel.Notes" />
+        </div>
+
+        <div class="mb-3">
+            <label for="workoutPlanId" class="form-label">Workout plan</label>
+            <InputSelect id="workoutPlanId" class="form-select" @bind-Value="formModel.WorkoutPlanId">
+                <option value="0">-- none --</option>
+                @foreach (var plan in workoutPlans)
+                {
+                    <option value="@plan.Id">@plan.Name</option>
+                }
+            </InputSelect>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Create</button>
+    </EditForm>
+}
+
+@code {
+    private IReadOnlyCollection<WorkoutLogResponse> logs = [];
+    private IReadOnlyCollection<WorkoutPlanResponse> workoutPlans = [];
+    private readonly WorkoutLogFormModel formModel = new();
+    private DateTime? fromFilter;
+    private DateTime? toFilter;
+    private bool isLoading;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            workoutPlans = await WorkoutsApiClient.GetWorkoutPlansAsync();
+            logs = await ProgressApiClient.GetWorkoutLogsAsync(fromFilter, toFilter);
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadLogsAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            logs = await ProgressApiClient.GetWorkoutLogsAsync(fromFilter, toFilter);
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string PlanName(int? workoutPlanId) =>
+        workoutPlanId is null
+            ? "-"
+            : workoutPlans.FirstOrDefault(p => p.Id == workoutPlanId)?.Name ?? $"#{workoutPlanId}";
+
+    private async Task HandleSubmitAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            await ProgressApiClient.CreateWorkoutLogAsync(new CreateWorkoutLogRequest
+            {
+                Date = formModel.Date,
+                Notes = formModel.Notes,
+                WorkoutPlanId = formModel.WorkoutPlanId == 0 ? null : formModel.WorkoutPlanId
+            });
+            formModel.Date = DateTime.Today;
+            formModel.Notes = string.Empty;
+            formModel.WorkoutPlanId = 0;
+            await LoadLogsAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task DeleteLogAsync(int id)
+    {
+        errorMessage = null;
+        try
+        {
+            await ProgressApiClient.DeleteWorkoutLogAsync(id);
+            await LoadLogsAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private sealed class WorkoutLogFormModel
+    {
+        [Required]
+        public DateTime Date { get; set; } = DateTime.Today;
+
+        public string Notes { get; set; } = string.Empty;
+
+        public int WorkoutPlanId { get; set; }
+    }
+}

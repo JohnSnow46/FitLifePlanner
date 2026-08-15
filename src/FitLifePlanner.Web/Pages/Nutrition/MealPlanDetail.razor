@@ -1,0 +1,245 @@
+@page "/meal-plans/{PlanId:int}"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.ComponentModel.DataAnnotations
+@using FitLifePlanner.Web.Contracts.Nutrition
+@using FitLifePlanner.Web.Services
+@inject NutritionApiClient NutritionApiClient
+@inject NavigationManager NavigationManager
+
+<PageTitle>Meal Plan</PageTitle>
+
+<ErrorAlert Message="@errorMessage" />
+
+@if (isLoading)
+{
+    <LoadingIndicator />
+}
+else if (plan is not null)
+{
+    <h1>@plan.Name</h1>
+
+    <EditForm Model="renameFormModel" OnValidSubmit="HandleRenameAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="name" class="form-label">Name</label>
+            <InputText id="name" class="form-control" @bind-Value="renameFormModel.Name" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Rename</button>
+    </EditForm>
+
+    <h2 class="mt-4">Entries</h2>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Food</th>
+                <th>Meal</th>
+                <th>Day</th>
+                <th>Quantity</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var entry in plan.Entries)
+            {
+                <tr>
+                    <td>@FoodName(entry.FoodId)</td>
+                    <td>@entry.MealType</td>
+                    <td>@entry.DayOfWeek</td>
+                    <td>@entry.Quantity</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveEntryAsync(entry.Id)">Remove</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h3>Add entry</h3>
+
+    <EditForm Model="addEntryFormModel" OnValidSubmit="HandleAddEntryAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="food" class="form-label">Food</label>
+            <InputSelect id="food" class="form-select" @bind-Value="addEntryFormModel.FoodId">
+                <option value="0">-- select --</option>
+                @foreach (var food in foodCatalog)
+                {
+                    <option value="@food.Id">@food.Name</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label for="mealType" class="form-label">Meal type</label>
+            <InputSelect id="mealType" class="form-select" @bind-Value="addEntryFormModel.MealType">
+                @foreach (var mealType in Enum.GetValues<MealType>())
+                {
+                    <option value="@mealType">@mealType</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label for="dayOfWeek" class="form-label">Day of week</label>
+            <InputSelect id="dayOfWeek" class="form-select" @bind-Value="addEntryFormModel.DayOfWeek">
+                @foreach (var day in Enum.GetValues<DayOfWeek>())
+                {
+                    <option value="@day">@day</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label for="quantity" class="form-label">Quantity</label>
+            <InputNumber id="quantity" class="form-control" @bind-Value="addEntryFormModel.Quantity" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Add entry</button>
+    </EditForm>
+
+    <h2 class="mt-4">Danger zone</h2>
+
+    @if (confirmingDelete)
+    {
+        <p>Are you sure you want to delete this plan?</p>
+        <button type="button" class="btn btn-danger me-2" @onclick="DeletePlanAsync">Confirm delete</button>
+        <button type="button" class="btn btn-outline-secondary" @onclick="() => confirmingDelete = false">Cancel</button>
+    }
+    else
+    {
+        <button type="button" class="btn btn-outline-danger" @onclick="() => confirmingDelete = true">Delete plan</button>
+    }
+}
+
+@code {
+    [Parameter]
+    public int PlanId { get; set; }
+
+    private MealPlanDetailResponse? plan;
+    private IReadOnlyCollection<FoodResponse> foodCatalog = [];
+    private readonly RenameFormModel renameFormModel = new();
+    private readonly AddEntryFormModel addEntryFormModel = new();
+    private bool isLoading;
+    private bool confirmingDelete;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            plan = await NutritionApiClient.GetMealPlanAsync(PlanId);
+            foodCatalog = await NutritionApiClient.GetFoodsAsync();
+            renameFormModel.Name = plan.Name;
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string FoodName(int foodId) =>
+        foodCatalog.FirstOrDefault(f => f.Id == foodId)?.Name ?? $"#{foodId}";
+
+    private async Task HandleRenameAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            await NutritionApiClient.UpdateMealPlanAsync(PlanId, new UpdateMealPlanRequest { Name = renameFormModel.Name });
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task HandleAddEntryAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            await NutritionApiClient.AddMealPlanEntryAsync(PlanId, new AddMealPlanEntryRequest
+            {
+                FoodId = addEntryFormModel.FoodId,
+                MealType = addEntryFormModel.MealType,
+                Quantity = addEntryFormModel.Quantity,
+                DayOfWeek = addEntryFormModel.DayOfWeek
+            });
+            addEntryFormModel.FoodId = 0;
+            addEntryFormModel.MealType = MealType.Breakfast;
+            addEntryFormModel.Quantity = 0;
+            addEntryFormModel.DayOfWeek = DayOfWeek.Monday;
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task RemoveEntryAsync(int entryId)
+    {
+        errorMessage = null;
+        try
+        {
+            await NutritionApiClient.RemoveMealPlanEntryAsync(PlanId, entryId);
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task DeletePlanAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            await NutritionApiClient.DeleteMealPlanAsync(PlanId);
+            NavigationManager.NavigateTo("/meal-plans");
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+            confirmingDelete = false;
+        }
+    }
+
+    private sealed class RenameFormModel
+    {
+        [Required]
+        public string Name { get; set; } = string.Empty;
+    }
+
+    private sealed class AddEntryFormModel
+    {
+        [Range(1, int.MaxValue, ErrorMessage = "Select a food.")]
+        public int FoodId { get; set; }
+
+        public MealType MealType { get; set; } = MealType.Breakfast;
+
+        [Range(0.01, double.MaxValue, ErrorMessage = "Quantity must be greater than 0.")]
+        public decimal Quantity { get; set; }
+
+        public DayOfWeek DayOfWeek { get; set; } = DayOfWeek.Monday;
+    }
+}

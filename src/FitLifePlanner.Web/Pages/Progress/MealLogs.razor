@@ -1,0 +1,204 @@
+@page "/meal-logs"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.ComponentModel.DataAnnotations
+@using FitLifePlanner.Web.Contracts.Nutrition
+@using FitLifePlanner.Web.Contracts.Progress
+@using FitLifePlanner.Web.Services
+@inject ProgressApiClient ProgressApiClient
+@inject NutritionApiClient NutritionApiClient
+
+<PageTitle>Meal Logs</PageTitle>
+
+<h1>Meal Logs</h1>
+
+<ErrorAlert Message="@errorMessage" />
+
+<div class="row mb-3">
+    <div class="col-auto">
+        <label for="from" class="form-label">From</label>
+        <input id="from" type="date" class="form-control" @bind="fromFilter" />
+    </div>
+    <div class="col-auto">
+        <label for="to" class="form-label">To</label>
+        <input id="to" type="date" class="form-control" @bind="toFilter" />
+    </div>
+    <div class="col-auto align-self-end">
+        <button type="button" class="btn btn-outline-secondary" @onclick="LoadMealLogsAsync">Filter</button>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <LoadingIndicator />
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Meal type</th>
+                <th>Food</th>
+                <th>Quantity</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var mealLog in mealLogs)
+            {
+                <tr>
+                    <td>@mealLog.Date.ToLocalTime().ToString("d")</td>
+                    <td>@mealLog.MealType</td>
+                    <td>@FoodName(mealLog.FoodId)</td>
+                    <td>@mealLog.QuantityConsumed</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteMealLogAsync(mealLog.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h2>New meal log</h2>
+
+    <EditForm Model="formModel" OnValidSubmit="HandleSubmitAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="date" class="form-label">Date</label>
+            <InputDate id="date" class="form-control" @bind-Value="formModel.Date" />
+        </div>
+
+        <div class="mb-3">
+            <label for="mealType" class="form-label">Meal type</label>
+            <InputSelect id="mealType" class="form-select" @bind-Value="formModel.MealType">
+                @foreach (var mealType in Enum.GetValues<MealType>())
+                {
+                    <option value="@mealType">@mealType</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label for="foodId" class="form-label">Food</label>
+            <InputSelect id="foodId" class="form-select" @bind-Value="formModel.FoodId">
+                <option value="0">-- select --</option>
+                @foreach (var food in foodCatalog)
+                {
+                    <option value="@food.Id">@food.Name</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label for="quantityConsumed" class="form-label">Quantity</label>
+            <InputNumber id="quantityConsumed" class="form-control" @bind-Value="formModel.QuantityConsumed" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Create</button>
+    </EditForm>
+}
+
+@code {
+    private IReadOnlyCollection<MealLogResponse> mealLogs = [];
+    private IReadOnlyCollection<FoodResponse> foodCatalog = [];
+    private readonly MealLogFormModel formModel = new();
+    private DateTime? fromFilter;
+    private DateTime? toFilter;
+    private bool isLoading;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            foodCatalog = await NutritionApiClient.GetFoodsAsync();
+            mealLogs = await ProgressApiClient.GetMealLogsAsync(fromFilter, toFilter);
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadMealLogsAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            mealLogs = await ProgressApiClient.GetMealLogsAsync(fromFilter, toFilter);
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string FoodName(int foodId) =>
+        foodCatalog.FirstOrDefault(f => f.Id == foodId)?.Name ?? $"#{foodId}";
+
+    private async Task HandleSubmitAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            await ProgressApiClient.CreateMealLogAsync(new CreateMealLogRequest
+            {
+                Date = formModel.Date,
+                MealType = formModel.MealType,
+                FoodId = formModel.FoodId,
+                QuantityConsumed = formModel.QuantityConsumed
+            });
+            formModel.Date = DateTime.Today;
+            formModel.MealType = MealType.Breakfast;
+            formModel.FoodId = 0;
+            formModel.QuantityConsumed = 0;
+            await LoadMealLogsAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task DeleteMealLogAsync(int id)
+    {
+        errorMessage = null;
+        try
+        {
+            await ProgressApiClient.DeleteMealLogAsync(id);
+            await LoadMealLogsAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private sealed class MealLogFormModel
+    {
+        [Required]
+        public DateTime Date { get; set; } = DateTime.Today;
+
+        [Required]
+        public MealType MealType { get; set; } = MealType.Breakfast;
+
+        [Range(1, int.MaxValue, ErrorMessage = "Select a food.")]
+        public int FoodId { get; set; }
+
+        [Range(0.01, double.MaxValue)]
+        public decimal QuantityConsumed { get; set; }
+    }
+}

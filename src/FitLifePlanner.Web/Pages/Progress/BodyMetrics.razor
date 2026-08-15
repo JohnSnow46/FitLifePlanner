@@ -1,0 +1,171 @@
+@page "/body-metrics"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.ComponentModel.DataAnnotations
+@using FitLifePlanner.Web.Contracts.Progress
+@using FitLifePlanner.Web.Services
+@inject ProgressApiClient ProgressApiClient
+
+<PageTitle>Body Metrics</PageTitle>
+
+<h1>Body Metrics</h1>
+
+<ErrorAlert Message="@errorMessage" />
+
+<div class="row mb-3">
+    <div class="col-auto">
+        <label for="from" class="form-label">From</label>
+        <input id="from" type="date" class="form-control" @bind="fromFilter" />
+    </div>
+    <div class="col-auto">
+        <label for="to" class="form-label">To</label>
+        <input id="to" type="date" class="form-control" @bind="toFilter" />
+    </div>
+    <div class="col-auto align-self-end">
+        <button type="button" class="btn btn-outline-secondary" @onclick="LoadEntriesAsync">Filter</button>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <LoadingIndicator />
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Weight</th>
+                <th>Body fat %</th>
+                <th>Notes</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var entry in entries)
+            {
+                <tr>
+                    <td>@entry.Date.ToLocalTime().ToString("d")</td>
+                    <td>@entry.Weight</td>
+                    <td>@entry.BodyFatPercent</td>
+                    <td>@entry.Notes</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteEntryAsync(entry.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h2>New entry</h2>
+
+    <EditForm Model="formModel" OnValidSubmit="HandleSubmitAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="date" class="form-label">Date</label>
+            <InputDate id="date" class="form-control" @bind-Value="formModel.Date" />
+        </div>
+
+        <div class="mb-3">
+            <label for="weight" class="form-label">Weight</label>
+            <InputNumber id="weight" class="form-control" @bind-Value="formModel.Weight" />
+        </div>
+
+        <div class="mb-3">
+            <label for="bodyFatPercent" class="form-label">Body fat %</label>
+            <InputNumber id="bodyFatPercent" class="form-control" @bind-Value="formModel.BodyFatPercent" />
+        </div>
+
+        <div class="mb-3">
+            <label for="notes" class="form-label">Notes</label>
+            <InputText id="notes" class="form-control" @bind-Value="formModel.Notes" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Create</button>
+    </EditForm>
+}
+
+@code {
+    private IReadOnlyCollection<BodyMetricEntryResponse> entries = [];
+    private readonly BodyMetricEntryFormModel formModel = new();
+    private DateTime? fromFilter;
+    private DateTime? toFilter;
+    private bool isLoading;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEntriesAsync();
+    }
+
+    private async Task LoadEntriesAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            entries = await ProgressApiClient.GetBodyMetricEntriesAsync(fromFilter, toFilter);
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            await ProgressApiClient.CreateBodyMetricEntryAsync(new CreateBodyMetricEntryRequest
+            {
+                Date = formModel.Date,
+                Weight = formModel.Weight,
+                BodyFatPercent = formModel.BodyFatPercent,
+                Notes = formModel.Notes
+            });
+            formModel.Date = DateTime.Today;
+            formModel.Weight = 0;
+            formModel.BodyFatPercent = null;
+            formModel.Notes = string.Empty;
+            await LoadEntriesAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task DeleteEntryAsync(int id)
+    {
+        errorMessage = null;
+        try
+        {
+            await ProgressApiClient.DeleteBodyMetricEntryAsync(id);
+            await LoadEntriesAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private sealed class BodyMetricEntryFormModel
+    {
+        [Required]
+        public DateTime Date { get; set; } = DateTime.Today;
+
+        [Range(0.01, double.MaxValue)]
+        public decimal Weight { get; set; }
+
+        public decimal? BodyFatPercent { get; set; }
+
+        public string Notes { get; set; } = string.Empty;
+    }
+}

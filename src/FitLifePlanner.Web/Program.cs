@@ -17,4 +17,13 @@ builder.Services.AddTransient<BearerTokenHandler>();
 builder.Services.AddHttpClient<UsersApiClient>(c => c.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]!))
     .AddHttpMessageHandler<BearerTokenHandler>();
 
+builder.Services.AddHttpClient<WorkoutsApiClient>(c => c.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]!))
+    .AddHttpMessageHandler<BearerTokenHandler>();
+
+builder.Services.AddHttpClient<NutritionApiClient>(c => c.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]!))
+    .AddHttpMessageHandler<BearerTokenHandler>();
+
+builder.Services.AddHttpClient<ProgressApiClient>(c => c.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]!))
+    .AddHttpMessageHandler<BearerTokenHandler>();
+
 await builder.Build().RunAsync();
