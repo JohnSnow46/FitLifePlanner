@@ -52,6 +52,17 @@ public class WorkoutLogsController(FitLifePlannerDbContext context) : Controller
     {
         var userId = User.GetUserId();
 
+        if (request.WorkoutPlanId is not null)
+        {
+            var planExists = await context.WorkoutPlans
+                .AnyAsync(p => p.Id == request.WorkoutPlanId && p.UserId == userId);
+
+            if (!planExists)
+            {
+                throw new NotFoundException("WorkoutPlan", request.WorkoutPlanId);
+            }
+        }
+
         var log = WorkoutLog.Create(userId, request.Date, request.Notes, request.WorkoutPlanId);
 
         context.WorkoutLogs.Add(log);
@@ -84,6 +95,12 @@ public class WorkoutLogsController(FitLifePlannerDbContext context) : Controller
             .Include(l => l.Entries)
             .FirstOrDefaultAsync(l => l.Id == logId && l.UserId == userId)
             ?? throw new NotFoundException("WorkoutLog", logId);
+
+        var exerciseExists = await context.Exercises.AnyAsync(e => e.Id == request.ExerciseId);
+        if (!exerciseExists)
+        {
+            throw new NotFoundException("Exercise", request.ExerciseId);
+        }
 
         var entry = log.AddEntry(request.ExerciseId, request.SetsCompleted, request.RepsCompleted, request.WeightUsed);
 

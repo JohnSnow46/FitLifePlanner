@@ -50,6 +50,30 @@ public class UsersControllerTests(TestApiFactory factory) : IClassFixture<TestAp
     }
 
     [Fact]
+    public async Task Register_with_already_registered_email_returns_bad_request()
+    {
+        var client = factory.CreateClient();
+        var email = $"{Guid.NewGuid()}@example.com";
+
+        var firstResponse = await client.PostAsJsonAsync("/api/auth/register", new UserRegisterRequest
+        {
+            Name = "Jan Kowalski",
+            Email = email,
+            Password = "correct-horse-battery"
+        });
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+
+        var secondResponse = await client.PostAsJsonAsync("/api/auth/register", new UserRegisterRequest
+        {
+            Name = "Inny Jan",
+            Email = email,
+            Password = "another-password"
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, secondResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task GetMe_without_token_returns_unauthorized()
     {
         var client = factory.CreateClient();

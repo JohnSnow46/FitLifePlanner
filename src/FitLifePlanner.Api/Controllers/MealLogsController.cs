@@ -51,6 +51,12 @@ public class MealLogsController(FitLifePlannerDbContext context) : ControllerBas
     {
         var userId = User.GetUserId();
 
+        var foodExists = await context.Foods.AnyAsync(f => f.Id == request.FoodId);
+        if (!foodExists)
+        {
+            throw new NotFoundException("Food", request.FoodId);
+        }
+
         var log = MealLog.Create(userId, request.Date, request.MealType, request.FoodId, request.QuantityConsumed);
 
         context.MealLogs.Add(log);

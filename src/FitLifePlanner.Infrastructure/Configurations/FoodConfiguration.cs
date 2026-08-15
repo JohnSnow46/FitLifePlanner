@@ -17,5 +17,17 @@ public class FoodConfiguration : IEntityTypeConfiguration<Food>
         builder.Property(f => f.Unit)
             .IsRequired()
             .HasMaxLength(50);
+
+        builder.Property(f => f.CaloriesPerUnit)
+            .HasPrecision(10, 2);
+
+        builder.Property(f => f.ProteinPerUnit)
+            .HasPrecision(10, 2);
+
+        builder.Property(f => f.CarbsPerUnit)
+            .HasPrecision(10, 2);
+
+        builder.Property(f => f.FatPerUnit)
+            .HasPrecision(10, 2);
     }
 }

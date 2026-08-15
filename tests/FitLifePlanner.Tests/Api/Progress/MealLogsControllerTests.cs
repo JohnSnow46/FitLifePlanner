@@ -115,4 +115,43 @@ public class MealLogsControllerTests(TestApiFactory factory) : IClassFixture<Tes
 
         Assert.Equal(HttpStatusCode.BadRequest, logResponse.StatusCode);
     }
+
+    [Fact]
+    public async Task CreateMealLog_with_nonexistent_food_id_returns_not_found()
+    {
+        var client = await CreateAuthenticatedClientAsync();
+
+        var createLogRequest = new CreateMealLogRequest
+        {
+            Date = DateTime.UtcNow.AddDays(-1),
+            MealType = MealType.Breakfast,
+            FoodId = 999_999,
+            QuantityConsumed = 100m
+        };
+
+        var logResponse = await client.PostAsJsonAsync("/api/meal-logs", createLogRequest);
+
+        Assert.Equal(HttpStatusCode.NotFound, logResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetMealLog_owned_by_other_user_returns_not_found()
+    {
+        var ownerClient = await CreateAuthenticatedClientAsync();
+        var foodId = await CreateFoodAsync(ownerClient, "Owner's Food");
+
+        var logResponse = await ownerClient.PostAsJsonAsync("/api/meal-logs", new CreateMealLogRequest
+        {
+            Date = DateTime.UtcNow.AddDays(-1),
+            MealType = MealType.Lunch,
+            FoodId = foodId,
+            QuantityConsumed = 100m
+        });
+        var log = await logResponse.Content.ReadFromJsonAsync<MealLogResponse>(JsonOptions);
+
+        var otherClient = await CreateAuthenticatedClientAsync();
+        var response = await otherClient.GetAsync($"/api/meal-logs/{log!.Id}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
 }
