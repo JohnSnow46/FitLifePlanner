@@ -163,6 +163,12 @@ public class WorkoutsController(FitLifePlannerDbContext context) : ControllerBas
             .FirstOrDefaultAsync(p => p.Id == planId && p.UserId == userId)
             ?? throw new NotFoundException("WorkoutPlan", planId);
 
+        var exerciseExists = await context.Exercises.AnyAsync(e => e.Id == request.ExerciseId);
+        if (!exerciseExists)
+        {
+            throw new NotFoundException("Exercise", request.ExerciseId);
+        }
+
         var planExercise = plan.AddExercise(request.ExerciseId, request.Order, request.TargetSets, request.TargetReps, request.TargetWeight);
 
         await context.SaveChangesAsync();

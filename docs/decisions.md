@@ -39,6 +39,36 @@ Template for a new entry:
 - ADRs read but not used: ADR-NNNN (<why it didn't apply>)
 ```
 
+### 2026-08-15 — Post-review data-integrity hardening (pre-ETAP 7)
+- ADRs used: ADR-0002 (§ SQLite as local-dev provider — `HasPrecision` on `decimal`
+  columns added now as a no-op on SQLite but required before any prod-provider switch;
+  two additive migrations generated, not applied, per the deferred-provider decision),
+  ADR-0003 (exception→status mapping extended: new narrow `DbUpdateException` → 409
+  branch in `GlobalExceptionHandler` for FK-in-use violations, kept separate from the
+  existing `ValidationException`/`NotFoundException` 400/404 pair rather than
+  reusing/widening either)
+- ADRs read but not used: ADR-0001 (no layer/module boundary change — fixes stayed
+  within existing `Infrastructure.Configurations`/`Api.Controllers`), ADR-0004 (frontend
+  untouched by design — `DateTime.Today`/local-kind issue on the Blazor side flagged by
+  the review but explicitly deferred, not fixed here)
+- Context: full-app `reviewer` pass (user-requested, ahead of ETAP 7 planning) found 3
+  blockers — cascading delete of catalog items (`Exercise`/`Food`) silently wiped other
+  users' plan/log data (`DeleteBehavior.Cascade` on 4 FKs, missing on the first pass for
+  `WorkoutPlanExercise`/`MealPlanEntry`, caught only on re-verification), a missing
+  ownership check on `WorkoutPlanId` when creating a `WorkoutLog`, and unvalidated
+  catalog FKs producing 500s instead of 404s on 4 controller actions. Bundled in the same
+  migration: `UserId` indexes on 5 owner entities, `[MaxLength]` on request DTOs matching
+  EF `HasMaxLength`, and a two-way UTC `ValueConverter` fix (write-side was previously
+  identity, so offset dates round-tripped incorrectly). Took 3 agent rounds
+  (builder → reviewer found the plan-level cascade gap → builder → reviewer confirmed
+  clean) — two EF migrations generated, neither applied to the dev DB yet.
+- Left open (not blockers, logged for later): POST-response echo isn't UTC-normalized
+  the way GET responses are (`docs/api.md` §1 wire-format requirement not fully met on
+  create); no unit test for the new `SqliteErrorCode`/`"FOREIGN KEY"` substring branch in
+  `GlobalExceptionHandler` (only indirectly covered via integration 409 tests); test
+  suite uses `EnsureCreated()` not `Database.Migrate()`, so it doesn't actually prove the
+  migrations are correct (verified manually this round instead).
+
 ### 2026-08-14 — ETAP 6 step 3/4: Progress feature UI
 - ADRs used: ADR-0004 (§2 wire-model shape — hand-written `Web/Contracts/Progress`
   records matching `Api/Contracts/Progress` 1:1; `MealLogResponse`/

@@ -13,5 +13,7 @@ public class WorkoutPlanConfiguration : IEntityTypeConfiguration<WorkoutPlan>
         builder.Property(w => w.Name)
             .IsRequired()
             .HasMaxLength(200);
+
+        builder.HasIndex(w => w.UserId);
     }
 }

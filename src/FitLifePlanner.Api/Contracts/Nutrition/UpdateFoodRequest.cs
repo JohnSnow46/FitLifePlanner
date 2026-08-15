@@ -5,9 +5,11 @@ namespace FitLifePlanner.Api.Contracts.Nutrition;
 public record UpdateFoodRequest
 {
     [Required]
+    [MaxLength(200)]
     public string Name { get; init; } = string.Empty;
 
     [Required]
+    [MaxLength(50)]
     public string Unit { get; init; } = string.Empty;
 
     [Required]

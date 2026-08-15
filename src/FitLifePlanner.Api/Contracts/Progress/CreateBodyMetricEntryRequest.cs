@@ -12,5 +12,6 @@ public record CreateBodyMetricEntryRequest
 
     public decimal? BodyFatPercent { get; init; }
 
+    [MaxLength(2000)]
     public string Notes { get; init; } = string.Empty;
 }

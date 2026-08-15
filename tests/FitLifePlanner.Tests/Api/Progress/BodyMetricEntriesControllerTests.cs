@@ -83,4 +83,23 @@ public class BodyMetricEntriesControllerTests(TestApiFactory factory) : IClassFi
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
+
+    [Fact]
+    public async Task GetBodyMetricEntry_owned_by_other_user_returns_not_found()
+    {
+        var ownerClient = await CreateAuthenticatedClientAsync();
+        var createResponse = await ownerClient.PostAsJsonAsync("/api/body-metrics", new CreateBodyMetricEntryRequest
+        {
+            Date = DateTime.UtcNow.AddDays(-1),
+            Weight = 75m,
+            BodyFatPercent = null,
+            Notes = "Owner's entry"
+        });
+        var entry = await createResponse.Content.ReadFromJsonAsync<BodyMetricEntryResponse>();
+
+        var otherClient = await CreateAuthenticatedClientAsync();
+        var response = await otherClient.GetAsync($"/api/body-metrics/{entry!.Id}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
 }

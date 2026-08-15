@@ -15,6 +15,8 @@ public class WorkoutLogConfiguration : IEntityTypeConfiguration<WorkoutLog>
             .IsRequired()
             .HasMaxLength(2000);
 
+        builder.HasIndex(w => w.UserId);
+
         // WorkoutPlanId is a nullable FK: deleting a WorkoutPlan must not delete
         // or block-delete historical WorkoutLog rows (docs/database.md §2).
         builder.HasOne<WorkoutPlan>()

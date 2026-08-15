@@ -161,6 +161,12 @@ public class NutritionController(FitLifePlannerDbContext context) : ControllerBa
             .FirstOrDefaultAsync(p => p.Id == planId && p.UserId == userId)
             ?? throw new NotFoundException("MealPlan", planId);
 
+        var foodExists = await context.Foods.AnyAsync(f => f.Id == request.FoodId);
+        if (!foodExists)
+        {
+            throw new NotFoundException("Food", request.FoodId);
+        }
+
         var entry = plan.AddEntry(request.FoodId, request.MealType, request.Quantity, request.DayOfWeek);
 
         await context.SaveChangesAsync();

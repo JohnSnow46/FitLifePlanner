@@ -3,6 +3,7 @@ using System;
 using FitLifePlanner.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FitLifePlanner.Infrastructure.Migrations
 {
     [DbContext(typeof(FitLifePlannerDbContext))]
-    partial class FitLifePlannerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260815161009_FixOwnershipCascadeAndSchemaHardening")]
+    partial class FixOwnershipCascadeAndSchemaHardening
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.5");
@@ -347,7 +350,7 @@ namespace FitLifePlanner.Infrastructure.Migrations
                     b.HasOne("FitLifePlanner.Domain.Nutrition.Food", null)
                         .WithMany()
                         .HasForeignKey("FoodId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("FitLifePlanner.Domain.Nutrition.MealPlan", null)
@@ -394,7 +397,7 @@ namespace FitLifePlanner.Infrastructure.Migrations
                     b.HasOne("FitLifePlanner.Domain.Workouts.Exercise", null)
                         .WithMany()
                         .HasForeignKey("ExerciseId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("FitLifePlanner.Domain.Workouts.WorkoutPlan", null)

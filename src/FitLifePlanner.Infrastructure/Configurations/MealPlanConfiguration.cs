@@ -13,5 +13,7 @@ public class MealPlanConfiguration : IEntityTypeConfiguration<MealPlan>
         builder.Property(m => m.Name)
             .IsRequired()
             .HasMaxLength(200);
+
+        builder.HasIndex(m => m.UserId);
     }
 }

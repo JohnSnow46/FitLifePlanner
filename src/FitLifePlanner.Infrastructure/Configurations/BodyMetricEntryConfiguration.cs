@@ -10,8 +10,16 @@ public class BodyMetricEntryConfiguration : IEntityTypeConfiguration<BodyMetricE
     {
         builder.HasKey(b => b.Id);
 
+        builder.Property(b => b.Weight)
+            .HasPrecision(10, 2);
+
+        builder.Property(b => b.BodyFatPercent)
+            .HasPrecision(5, 2);
+
         builder.Property(b => b.Notes)
             .IsRequired()
             .HasMaxLength(2000);
+
+        builder.HasIndex(b => b.UserId);
     }
 }
