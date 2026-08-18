@@ -1,12 +1,16 @@
 # FitLife Planner
 
+[![CI](https://github.com/JohnSnow46/FitLifePlanner/actions/workflows/ci.yml/badge.svg)](https://github.com/JohnSnow46/FitLifePlanner/actions/workflows/ci.yml)
+
 A personal fitness and lifestyle planning application — workout planning, meal/nutrition
 planning, and progress tracking in one place. Built as a learning/portfolio project,
 developed iteratively with [Claude Code](https://claude.com/claude-code).
 
 > **Status:** ETAP 0-6 complete — workout, nutrition, and progress tracking are fully
 > usable end to end (API + Blazor UI, JWT auth). ETAP 7 (delivery: hosting, production
-> DB, CI, demo polish) is planned next — see [Roadmap](#roadmap) below.
+> DB, CI, demo polish) is in progress — CI is set up (GitHub Actions runs restore/build/
+> format/test on every push and PR to `develop`/`main`); hosting, production DB, and
+> demo polish are still open — see [Roadmap](#roadmap) below.
 
 ## Screenshot
 
@@ -61,7 +65,7 @@ the agent/skill pipeline.
 | ETAP 4 | API layer | ✅ Done |
 | ETAP 5 | Frontend foundation & auth | ✅ Done |
 | ETAP 6 | Feature UI (Workouts, Nutrition, Progress, dashboard) | ✅ Done |
-| ETAP 7 | Delivery: hosting, production DB, CI, demo polish | 📋 Planned |
+| ETAP 7 | Delivery: hosting, production DB, CI, demo polish | 🔄 In progress — CI done |
 
 Full detail in [docs/roadmap.md](docs/roadmap.md).
 
