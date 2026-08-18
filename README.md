@@ -4,28 +4,36 @@ A personal fitness and lifestyle planning application — workout planning, meal
 planning, and progress tracking in one place. Built as a learning/portfolio project,
 developed iteratively with [Claude Code](https://claude.com/claude-code).
 
-> **Status:** ETAP 0 (repo & environment setup) complete. No business features are
-> implemented yet — see [Roadmap](#roadmap) below.
+> **Status:** ETAP 0-6 complete — workout, nutrition, and progress tracking are fully
+> usable end to end (API + Blazor UI, JWT auth). ETAP 7 (delivery: hosting, production
+> DB, CI, demo polish) is planned next — see [Roadmap](#roadmap) below.
 
 ## Screenshot
 
-_Coming soon — no UI yet (ETAP 0 is setup-only)._
+_Coming soon._
 
 ## Tech stack
 
-Not yet decided. The stack, architecture, and data model are chosen in **ETAP 1
-(architecture analysis)** and documented in [docs/architecture.md](docs/architecture.md),
-[docs/database.md](docs/database.md), and [docs/api.md](docs/api.md) once that's done.
+ASP.NET Core Web API + Blazor WebAssembly SPA, both on .NET 10. EF Core + SQLite for
+local dev. See [docs/architecture.md](docs/architecture.md), [docs/database.md](docs/database.md),
+[docs/api.md](docs/api.md), and ADR-0001/ADR-0002 in [docs/decisions.md](docs/decisions.md)
+for the full rationale.
 
 ## Local requirements
 
-TBD once the stack is chosen (ETAP 1). Will be listed here and in
-[docs/development.md](docs/development.md).
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
 
 ## Getting started
 
-TBD once the stack is chosen (ETAP 1). Will be listed here and in
-[docs/development.md](docs/development.md).
+```
+dotnet restore
+dotnet ef database update --project src/FitLifePlanner.Infrastructure --startup-project src/FitLifePlanner.Api
+dotnet run --project src/FitLifePlanner.Api
+dotnet run --project src/FitLifePlanner.Web
+```
+
+Run the test suite with `dotnet test`. Full command reference in [CLAUDE.md](CLAUDE.md)
+and [docs/development.md](docs/development.md).
 
 ## Documentation
 
@@ -47,8 +55,13 @@ the agent/skill pipeline.
 | Stage | Goal | Status |
 |---|---|---|
 | ETAP 0 | Repo, Claude Code setup, base documentation, git workflow | ✅ Done |
-| ETAP 1 | Architecture analysis: stack choice, module/layer design, first ADRs | ⏳ Next |
-| ETAP 2+ | Data model, core features, API layer | Planned |
+| ETAP 1 | Architecture analysis: stack choice, module/layer design, first ADRs | ✅ Done |
+| ETAP 2 | Data model & database design | ✅ Done |
+| ETAP 3 | Core domain features | ✅ Done |
+| ETAP 4 | API layer | ✅ Done |
+| ETAP 5 | Frontend foundation & auth | ✅ Done |
+| ETAP 6 | Feature UI (Workouts, Nutrition, Progress, dashboard) | ✅ Done |
+| ETAP 7 | Delivery: hosting, production DB, CI, demo polish | 📋 Planned |
 
 Full detail in [docs/roadmap.md](docs/roadmap.md).
 

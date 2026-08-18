@@ -64,6 +64,13 @@ it's there."
 code. This is a portfolio/learning project — don't design for scale/flexibility it
 doesn't need without an explicit ask.
 
+**Stage-end audit:** when an ETAP is marked done in "Current status", run one full
+`reviewer` pass (no `architect` needed) over everything built in that stage before
+starting the next ETAP. `reviewer-lite`'s per-task diff scope doesn't reliably catch
+cross-controller issues like ownership checks or FK cascade config — see the
+2026-08-15 "Post-review data-integrity hardening" entry in `docs/decisions.md`, where
+this exact gap shipped through ETAP 4-6 fast-mode reviews unnoticed.
+
 ## Using the docs
 
 1. Task in a known area → check `## ADR Notes` in `docs/decisions.md` first.
