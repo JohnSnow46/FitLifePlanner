@@ -69,6 +69,17 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Apply pending EF Core migrations at startup so a fresh db (e.g. an empty Docker
+// volume) gets its schema without a manual `dotnet ef database update` step.
+// Skipped in the "Testing" environment, where TestApiFactory builds its own
+// in-memory SQLite schema via EnsureCreated().
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    using var migrationScope = app.Services.CreateScope();
+    var dbContext = migrationScope.ServiceProvider.GetRequiredService<FitLifePlannerDbContext>();
+    dbContext.Database.Migrate();
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
