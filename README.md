@@ -39,6 +39,18 @@ dotnet run --project src/FitLifePlanner.Web
 Run the test suite with `dotnet test`. Full command reference in [CLAUDE.md](CLAUDE.md)
 and [docs/development.md](docs/development.md).
 
+### Run with Docker
+
+```
+cp .env.example .env
+# edit .env and set JWT_KEY to a long random secret
+docker compose up --build
+```
+
+API is served at `http://localhost:8080`, the Blazor WebAssembly frontend at
+`http://localhost:8081`. The SQLite database file persists across restarts on a named
+Docker volume.
+
 ## Documentation
 
 | Area | File |

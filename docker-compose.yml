@@ -1,0 +1,42 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: src/FitLifePlanner.Api/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      # Redirect the SQLite file (appsettings.json default: "Data Source=fitlifeplanner.db",
+      # relative to the container's working dir) onto the named volume below so it
+      # survives container restarts/recreation.
+      - ConnectionStrings__Default=Data Source=/app/data/fitlifeplanner.db
+      # appsettings.json has no default for Jwt:Key (locally it only ever comes from
+      # `dotnet user-secrets`) — TokenService.GenerateToken/Program.cs read it with no
+      # fallback, so without this the container throws on every register/login call.
+      # Set JWT_KEY in a local .env file (see .env.example) — never hardcode it here.
+      - Jwt__Key=${JWT_KEY:?JWT_KEY must be set in .env, see .env.example}
+    volumes:
+      - api-data:/app/data
+
+  web:
+    build:
+      context: .
+      dockerfile: src/FitLifePlanner.Web/Dockerfile
+    ports:
+      - "8081:80"
+    depends_on:
+      - api
+    # Note: Web/wwwroot/appsettings.json bakes ApiBaseUrl in as
+    # https://localhost:7152/ (the dev-server port) at publish time. That still
+    # matches `dotnet run` local dev, but not the api service's container port
+    # (8080) mapped above — browsers calling the containerized web app won't
+    # reach the containerized api out of the box. Left as-is: this task only
+    # adds container plumbing, not a rework of the app's config system.
+    #
+    # Also: Api/appsettings.json's Cors:AllowedOrigins only lists dev-server ports
+    # (7122/5221), not this compose setup's web port (8081) — so even once the
+    # ApiBaseUrl above is fixed, the containerized web app would still be blocked
+    # by CORS. Left as-is for the same reason: out of scope for this task.
+
+volumes:
+  api-data:
