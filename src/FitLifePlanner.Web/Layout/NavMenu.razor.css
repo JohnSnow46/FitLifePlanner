@@ -53,6 +53,7 @@
         display: flex;
         align-items: center;
         line-height: 3rem;
+        transition: background-color 0.15s ease, color 0.15s ease;
     }
 
 .nav-item ::deep a.active {
@@ -79,5 +80,11 @@
         /* Allow sidebar to scroll for tall menus */
         height: calc(100vh - 3.5rem);
         overflow-y: auto;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-item ::deep a {
+        transition: none;
     }
 }
