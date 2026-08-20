@@ -26,17 +26,13 @@ services:
       - "8081:80"
     depends_on:
       - api
-    # Note: Web/wwwroot/appsettings.json bakes ApiBaseUrl in as
-    # https://localhost:7152/ (the dev-server port) at publish time. That still
-    # matches `dotnet run` local dev, but not the api service's container port
-    # (8080) mapped above — browsers calling the containerized web app won't
-    # reach the containerized api out of the box. Left as-is: this task only
-    # adds container plumbing, not a rework of the app's config system.
-    #
-    # Also: Api/appsettings.json's Cors:AllowedOrigins only lists dev-server ports
-    # (7122/5221), not this compose setup's web port (8081) — so even once the
-    # ApiBaseUrl above is fixed, the containerized web app would still be blocked
-    # by CORS. Left as-is for the same reason: out of scope for this task.
+    # Web/wwwroot/appsettings.Production.json overrides ApiBaseUrl to
+    # http://localhost:8080/ (the api service's host-mapped port above) when the
+    # app is served by a plain static server (no ASP.NET Core dev-server env
+    # header), which is what happens in this nginx-based container — standard
+    # Blazor WASM hosted-environment detection, defaults to Production outside
+    # a dev server. Api/appsettings.json's Cors:AllowedOrigins includes this web
+    # service's host-mapped port (8081) to match.
 
 volumes:
   api-data:
