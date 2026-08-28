@@ -23,6 +23,9 @@ builder.Services.AddOpenApi();
 builder.Services.AddDbContext<FitLifePlannerDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Default")));
 
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<FitLifePlannerDbContext>();
+
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
@@ -96,6 +99,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();
 

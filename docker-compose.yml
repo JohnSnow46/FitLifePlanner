@@ -17,6 +17,12 @@ services:
       - Jwt__Key=${JWT_KEY:?JWT_KEY must be set in .env, see .env.example}
     volumes:
       - api-data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   web:
     build:
@@ -25,7 +31,8 @@ services:
     ports:
       - "8081:80"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     # Web/wwwroot/appsettings.Production.json overrides ApiBaseUrl to
     # http://localhost:8080/ (the api service's host-mapped port above) when the
     # app is served by a plain static server (no ASP.NET Core dev-server env
