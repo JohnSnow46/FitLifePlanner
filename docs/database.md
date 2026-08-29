@@ -5,12 +5,13 @@
 - Storage choice → §1
 - Schema / entities → §2
 - Migrations → §3
+- Production provider (Postgres) → §4
 
 ## 1. Storage choice
 
-EF Core (Code-First, migrations), SQLite as the local-dev provider. Production provider
-is undecided — deferred to the hosting decision. Rationale and alternatives: ADR-0002
-(`docs/adr/ADR-0002-data-storage.md`).
+EF Core (Code-First, migrations), SQLite as the local-dev provider. Production uses
+PostgreSQL — see §4 and ADR-0005 (`docs/adr/ADR-0005-hosting-and-production-database.md`).
+Local-dev rationale and alternatives: ADR-0002 (`docs/adr/ADR-0002-data-storage.md`).
 
 ## 2. Schema / entities
 
@@ -67,3 +68,33 @@ dotnet ef database update --project src/FitLifePlanner.Infrastructure --startup-
 The SQLite `.db` file is local and git-ignored — each clone/dev applies migrations to
 get a fresh database, no shared dev database. See `CLAUDE.md` Commands for the
 day-to-day shortlist.
+
+## 4. Production provider (Postgres)
+
+`Database:Provider` (config, default `Sqlite`) selects the engine in
+`Program.cs`; setting it to `Postgres` (via `Database__Provider=Postgres` in the
+hosting environment, see `docs/deployment.md`) switches `AddDbContext` to `UseNpgsql`.
+Rationale: ADR-0005.
+
+A single EF Core migrations history can't serve two providers — the generated SQL is
+provider-specific (e.g. SQLite's `PRAGMA`-driven table rebuilds vs. Postgres `SERIAL`/
+`IDENTITY` columns), and EF discovers every `[Migration]`-tagged class in the configured
+migrations assembly regardless of which provider generated it. So Postgres migrations
+live in their own project/assembly, `FitLifePlanner.Infrastructure.Postgres`, generated
+against the same `FitLifePlannerDbContext`/model but kept separate on disk:
+
+```
+dotnet ef migrations add <Name> --project src/FitLifePlanner.Infrastructure.Postgres --startup-project src/FitLifePlanner.Infrastructure.Postgres -o Migrations
+```
+
+That project's `PostgresDesignTimeDbContextFactory` (an `IDesignTimeDbContextFactory`)
+is what `dotnet ef` uses to build the model — it takes precedence over `Program.cs`'s
+own host-based discovery, which matters because the API's startup path calls
+`Database.Migrate()` before `Run()`; without the factory, `dotnet ef migrations add`
+would try to actually apply migrations to a live Postgres connection that doesn't exist
+at generation time. The factory's connection string is a placeholder, used only to pick
+the provider for SQL generation — never a real target.
+
+At runtime, `Database.Migrate()` in `Program.cs` (unchanged) applies whichever
+provider's migrations match the active `DbContext` configuration — no separate deploy
+step beyond setting `Database:Provider` and `ConnectionStrings:Default`.

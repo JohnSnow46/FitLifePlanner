@@ -9,8 +9,11 @@ developed iteratively with [Claude Code](https://claude.com/claude-code).
 > **Status:** ETAP 0-6 complete — workout, nutrition, and progress tracking are fully
 > usable end to end (API + Blazor UI, JWT auth). ETAP 7 (delivery: hosting, production
 > DB, CI, demo polish) is in progress — CI is set up (GitHub Actions runs restore/build/
-> format/test on every push and PR to `develop`/`main`); hosting, production DB, and
-> demo polish are still open — see [Roadmap](#roadmap) below.
+> format/test on every push and PR to `develop`/`main`); hosting (Render) and the
+> production database (PostgreSQL) are decided and implemented, see
+> [ADR-0005](docs/adr/ADR-0005-hosting-and-production-database.md) and
+> [docs/deployment.md](docs/deployment.md); demo polish (screenshots) is still open — see
+> [Roadmap](#roadmap) below.
 
 ## Screenshot
 
@@ -59,6 +62,7 @@ Docker volume.
 | Database | [docs/database.md](docs/database.md) |
 | API | [docs/api.md](docs/api.md) |
 | Architectural decisions (ADRs) | [docs/decisions.md](docs/decisions.md) |
+| Deployment (Render) | [docs/deployment.md](docs/deployment.md) |
 | Roadmap | [docs/roadmap.md](docs/roadmap.md) |
 | Development workflow (branches, commits, PRs) | [docs/development.md](docs/development.md) |
 

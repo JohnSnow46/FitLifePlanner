@@ -13,7 +13,7 @@ tracks sequencing and status only.
 | ETAP 4 | API layer (`docs/api.md`) | ✅ Done — `UsersController` (JWT auth), `WorkoutsController`, `NutritionController`, and the `Progress` controllers (`WorkoutLogsController`/`MealLogsController`/`BodyMetricEntriesController`) implemented per ADR-0003 |
 | ETAP 5 | Frontend foundation & auth in `FitLifePlanner.Web` (typed API clients, JWT auth, protected routing) | ✅ Done (ADR-0004) |
 | ETAP 6 | Feature UI on top of that foundation: Workouts, Nutrition, Progress pages, dashboard | ✅ Done (ADR-0004) |
-| ETAP 7 | Delivery: hosting + production DB provider (deferred by ADR-0002), CI, README/demo polish | 📋 Planned — scope detailed when ETAP 6 closes |
+| ETAP 7 | Delivery: hosting + production DB provider (deferred by ADR-0002), CI, README/demo polish | 🔄 In progress — CI done; hosting + production DB decided (ADR-0005) and implemented (`docs/deployment.md`); demo polish (screenshots) still open |
 
 No business features are implemented before ETAP 1 is complete — see `CLAUDE.md`
 "Current status" for the authoritative current stage.

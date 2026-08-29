@@ -20,8 +20,24 @@ builder.Services.AddControllers()
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+// "Database:Provider" selects the production engine (see ADR-0005); defaults to
+// Sqlite so local dev/tests need no configuration. Postgres migrations live in a
+// separate assembly (FitLifePlanner.Infrastructure.Postgres) — see docs/database.md §4
+// for why a single migrations history can't serve two providers.
+var databaseProvider = builder.Configuration["Database:Provider"] ?? "Sqlite";
 builder.Services.AddDbContext<FitLifePlannerDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("Default")));
+{
+    var connectionString = builder.Configuration.GetConnectionString("Default");
+    if (string.Equals(databaseProvider, "Postgres", StringComparison.OrdinalIgnoreCase))
+    {
+        options.UseNpgsql(connectionString,
+            npgsql => npgsql.MigrationsAssembly("FitLifePlanner.Infrastructure.Postgres"));
+    }
+    else
+    {
+        options.UseSqlite(connectionString);
+    }
+});
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<FitLifePlannerDbContext>();

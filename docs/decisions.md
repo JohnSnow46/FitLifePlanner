@@ -23,6 +23,10 @@ One line per ADR: number, link, one-sentence summary. Newest at the bottom.
   `localStorage` behind a `TokenStore` + custom `AuthenticationStateProvider`, bearer
   `DelegatingHandler` on typed `<FeatureArea>ApiClient`s, own `Contracts` records (no
   shared project), no state-management library, and a CORS policy on `Api`.
+- [ADR-0005](adr/ADR-0005-hosting-and-production-database.md) — Host `Api`/`Web` on
+  Render from the existing Dockerfiles; production database is Render-managed
+  PostgreSQL, selected via `Database:Provider`, with its own migrations project
+  (`FitLifePlanner.Infrastructure.Postgres`).
 
 ## ADR Notes
 
@@ -38,6 +42,17 @@ Template for a new entry:
 - ADRs used: ADR-NNNN (<one-line impact on the implementation>)
 - ADRs read but not used: ADR-NNNN (<why it didn't apply>)
 ```
+
+### 2026-08-29 — ETAP 7: hosting + production database decision
+- ADRs used: ADR-0005 (new — Render hosting from existing Dockerfiles, Postgres as
+  production DB via `Database:Provider`; drove the new
+  `FitLifePlanner.Infrastructure.Postgres` migrations project and the
+  `PostgresDesignTimeDbContextFactory` needed to generate its migrations without a live
+  Postgres connection), ADR-0002 (fulfils the provider swap it deferred — SQLite stays
+  the local-dev default, unchanged)
+- ADRs read but not used: ADR-0001/ADR-0003/ADR-0004 (no layer boundary, API contract,
+  or frontend change — this is purely an Infrastructure-layer addition plus deployment
+  config)
 
 ### 2026-08-15 — Post-review data-integrity hardening (pre-ETAP 7)
 - ADRs used: ADR-0002 (§ SQLite as local-dev provider — `HasPrecision` on `decimal`

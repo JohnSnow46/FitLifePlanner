@@ -176,6 +176,12 @@ anonymous visitors), all built per ADR-0004's mechanical pattern (typed
 `<FeatureArea>ApiClient` + hand-written `Contracts`). Next stage is ETAP 7, see
 `docs/roadmap.md`.
 
+**ETAP 7 (delivery) — in progress.** CI done. Hosting (Render) and production DB
+(PostgreSQL) decided and implemented per ADR-0005: `Database:Provider` switch in
+`Program.cs`, Postgres migrations in the new `FitLifePlanner.Infrastructure.Postgres`
+project (see `docs/database.md` §4), setup steps in `docs/deployment.md`. Demo polish
+(README screenshots) still open.
+
 ---
 
 Keep this file short — every line loads into every conversation, and a bloated
