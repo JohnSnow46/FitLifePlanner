@@ -23,6 +23,11 @@ public class BodyMetricEntry
             throw new ValidationException("Weight must be greater than zero.");
         }
 
+        if (bodyFatPercent is < 0 or > 100)
+        {
+            throw new ValidationException("Body fat percent must be between 0 and 100.");
+        }
+
         return new BodyMetricEntry
         {
             UserId = userId,
