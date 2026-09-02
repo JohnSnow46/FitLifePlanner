@@ -41,4 +41,31 @@ public class WorkoutPlanTests
         Assert.Throws<ValidationException>(() =>
             plan.AddExercise(exerciseId: 20, order: 1, targetSets: 4, targetReps: 8, targetWeight: 60m));
     }
+
+    [Fact]
+    public void AddExercise_with_zero_target_sets_throws_ValidationException()
+    {
+        var plan = new WorkoutPlan { Id = 1, UserId = 1, Name = "Push Day", CreatedAt = DateTime.UtcNow };
+
+        Assert.Throws<ValidationException>(() =>
+            plan.AddExercise(exerciseId: 10, order: 1, targetSets: 0, targetReps: 10, targetWeight: 50m));
+    }
+
+    [Fact]
+    public void AddExercise_with_zero_target_reps_throws_ValidationException()
+    {
+        var plan = new WorkoutPlan { Id = 1, UserId = 1, Name = "Push Day", CreatedAt = DateTime.UtcNow };
+
+        Assert.Throws<ValidationException>(() =>
+            plan.AddExercise(exerciseId: 10, order: 1, targetSets: 3, targetReps: 0, targetWeight: 50m));
+    }
+
+    [Fact]
+    public void AddExercise_with_negative_target_weight_throws_ValidationException()
+    {
+        var plan = new WorkoutPlan { Id = 1, UserId = 1, Name = "Push Day", CreatedAt = DateTime.UtcNow };
+
+        Assert.Throws<ValidationException>(() =>
+            plan.AddExercise(exerciseId: 10, order: 1, targetSets: 3, targetReps: 10, targetWeight: -5m));
+    }
 }
