@@ -43,4 +43,13 @@ public class BodyMetricEntryTests
         Assert.Throws<ValidationException>(() =>
             BodyMetricEntry.Create(userId: 1, date: DateTime.UtcNow, weight: 80m, bodyFatPercent: bodyFatPercent, notes: ""));
     }
+
+    [Fact]
+    public void Create_with_notes_exceeding_max_length_throws_ValidationException()
+    {
+        var notes = new string('a', 2001);
+
+        Assert.Throws<ValidationException>(() =>
+            BodyMetricEntry.Create(userId: 1, date: DateTime.UtcNow, weight: 80m, bodyFatPercent: null, notes: notes));
+    }
 }

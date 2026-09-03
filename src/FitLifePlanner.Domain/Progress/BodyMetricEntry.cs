@@ -28,6 +28,11 @@ public class BodyMetricEntry
             throw new ValidationException("Body fat percent must be between 0 and 100.");
         }
 
+        if (notes.Length > 2000)
+        {
+            throw new ValidationException("Notes must not exceed 2000 characters.");
+        }
+
         return new BodyMetricEntry
         {
             UserId = userId,
