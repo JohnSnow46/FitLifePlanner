@@ -137,6 +137,21 @@ public class UsersControllerTests(TestApiFactory factory) : IClassFixture<TestAp
     }
 
     [Fact]
+    public async Task Register_with_overlong_password_returns_bad_request()
+    {
+        var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync("/api/auth/register", new UserRegisterRequest
+        {
+            Name = "Jan Kowalski",
+            Email = $"{Guid.NewGuid()}@example.com",
+            Password = new string('a', 101)
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetMe_without_token_returns_unauthorized()
     {
         var client = factory.CreateClient();
