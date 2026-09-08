@@ -10,5 +10,6 @@ public record UserLoginRequest
     public string Email { get; init; } = string.Empty;
 
     [Required]
+    [MaxLength(100)]
     public string Password { get; init; } = string.Empty;
 }
