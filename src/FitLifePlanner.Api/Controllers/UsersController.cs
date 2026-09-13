@@ -22,7 +22,7 @@ public class UsersController(
     [HttpPost("auth/register")]
     public async Task<ActionResult<AuthResponse>> RegisterAsync(UserRegisterRequest request)
     {
-        var emailTaken = await context.Users.AnyAsync(u => u.Email == request.Email);
+        var emailTaken = await context.Users.AnyAsync(u => u.Email.ToLower() == request.Email.ToLower());
         if (emailTaken)
         {
             throw new ValidationException("Email is already registered.");
@@ -42,7 +42,7 @@ public class UsersController(
     [HttpPost("auth/login")]
     public async Task<ActionResult<AuthResponse>> LoginAsync(UserLoginRequest request)
     {
-        var user = await context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+        var user = await context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower());
 
         if (user is null || passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password) == PasswordVerificationResult.Failed)
         {
@@ -72,9 +72,9 @@ public class UsersController(
         var user = await context.Users.FindAsync(userId)
             ?? throw new NotFoundException("User", userId);
 
-        if (request.Email != user.Email)
+        if (!string.Equals(request.Email, user.Email, StringComparison.OrdinalIgnoreCase))
         {
-            var emailTaken = await context.Users.AnyAsync(u => u.Email == request.Email);
+            var emailTaken = await context.Users.AnyAsync(u => u.Email.ToLower() == request.Email.ToLower());
             if (emailTaken)
             {
                 throw new ValidationException("Email is already registered.");

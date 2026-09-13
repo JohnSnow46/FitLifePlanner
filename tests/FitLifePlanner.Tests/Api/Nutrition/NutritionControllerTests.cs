@@ -152,6 +152,24 @@ public class NutritionControllerTests(TestApiFactory factory) : IClassFixture<Te
     }
 
     [Fact]
+    public async Task CreateFood_with_negative_calories_per_unit_returns_bad_request()
+    {
+        var client = await CreateAuthenticatedClientAsync();
+
+        var foodResponse = await client.PostAsJsonAsync("/api/foods", new CreateFoodRequest
+        {
+            Name = "Invalid Food",
+            Unit = "g",
+            CaloriesPerUnit = -1m,
+            ProteinPerUnit = 0m,
+            CarbsPerUnit = 0m,
+            FatPerUnit = 0m
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, foodResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task AddEntry_with_nonexistent_food_id_returns_not_found()
     {
         var client = await CreateAuthenticatedClientAsync();
