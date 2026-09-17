@@ -10,6 +10,7 @@ public record CreateBodyMetricEntryRequest
     [Range(0.01, double.MaxValue)]
     public decimal Weight { get; init; }
 
+    [Range(0, 100)]
     public decimal? BodyFatPercent { get; init; }
 
     [MaxLength(2000)]
