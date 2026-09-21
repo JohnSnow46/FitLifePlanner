@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using FitLifePlanner.Web.Contracts.Common;
 using FitLifePlanner.Web.Contracts.Nutrition;
 
 namespace FitLifePlanner.Web.Contracts.Progress;
@@ -6,6 +7,7 @@ namespace FitLifePlanner.Web.Contracts.Progress;
 public record CreateMealLogRequest
 {
     [Required]
+    [NotInFuture]
     public DateTime Date { get; init; }
 
     [Required]

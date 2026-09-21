@@ -1,10 +1,12 @@
 using System.ComponentModel.DataAnnotations;
+using FitLifePlanner.Web.Contracts.Common;
 
 namespace FitLifePlanner.Web.Contracts.Progress;
 
 public record CreateBodyMetricEntryRequest
 {
     [Required]
+    [NotInFuture]
     public DateTime Date { get; init; }
 
     [Range(0.01, double.MaxValue)]
