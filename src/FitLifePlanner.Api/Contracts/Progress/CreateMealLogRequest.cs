@@ -11,6 +11,7 @@ public record CreateMealLogRequest
     public DateTime Date { get; init; }
 
     [Required]
+    [EnumDataType(typeof(MealType))]
     public MealType MealType { get; init; }
 
     [Required]
