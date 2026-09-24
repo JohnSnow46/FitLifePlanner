@@ -16,5 +16,6 @@ public record AddMealPlanEntryRequest
     public decimal Quantity { get; init; }
 
     [Required]
+    [EnumDataType(typeof(DayOfWeek))]
     public DayOfWeek DayOfWeek { get; init; }
 }
