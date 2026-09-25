@@ -138,6 +138,35 @@ public class WorkoutsController(FitLifePlannerDbContext context) : ControllerBas
         return NoContent();
     }
 
+    [HttpPost("workout-plans/{id:int}/duplicate")]
+    public async Task<ActionResult<WorkoutPlanResponse>> DuplicateWorkoutPlanAsync(int id)
+    {
+        var userId = User.GetUserId();
+
+        var source = await context.WorkoutPlans
+            .Include(p => p.Exercises)
+            .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId)
+            ?? throw new NotFoundException("WorkoutPlan", id);
+
+        var copy = new WorkoutPlan
+        {
+            UserId = userId,
+            Name = $"{source.Name} (Copy)",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        context.WorkoutPlans.Add(copy);
+
+        foreach (var exercise in source.Exercises.OrderBy(e => e.Order))
+        {
+            copy.AddExercise(exercise.ExerciseId, exercise.Order, exercise.TargetSets, exercise.TargetReps, exercise.TargetWeight);
+        }
+
+        await context.SaveChangesAsync();
+
+        return Created($"/api/workout-plans/{copy.Id}", copy.ToResponse());
+    }
+
     [HttpDelete("workout-plans/{id:int}")]
     public async Task<IActionResult> DeleteWorkoutPlanAsync(int id)
     {

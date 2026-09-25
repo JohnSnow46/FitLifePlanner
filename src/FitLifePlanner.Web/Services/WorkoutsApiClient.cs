@@ -68,6 +68,12 @@ public class WorkoutsApiClient(HttpClient httpClient)
         await EnsureSuccessAsync(response, cancellationToken);
     }
 
+    public async Task<WorkoutPlanResponse> DuplicateWorkoutPlanAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var response = await httpClient.PostAsync($"api/workout-plans/{id}/duplicate", null, cancellationToken);
+        return await ReadResponseAsync<WorkoutPlanResponse>(response, cancellationToken);
+    }
+
     public async Task<WorkoutPlanExerciseResponse> AddWorkoutPlanExerciseAsync(int planId, AddWorkoutPlanExerciseRequest request, CancellationToken cancellationToken = default)
     {
         var response = await httpClient.PostAsJsonAsync($"api/workout-plans/{planId}/exercises", request, cancellationToken);

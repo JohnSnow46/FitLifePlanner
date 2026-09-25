@@ -164,6 +164,67 @@ public class WorkoutsControllerTests(TestApiFactory factory) : IClassFixture<Tes
     }
 
     [Fact]
+    public async Task DuplicateWorkoutPlan_copies_name_and_all_exercises_into_a_new_plan()
+    {
+        var client = await CreateAuthenticatedClientAsync();
+
+        var planResponse = await client.PostAsJsonAsync("/api/workout-plans", new CreateWorkoutPlanRequest
+        {
+            Name = "Push Day"
+        });
+        var plan = await planResponse.Content.ReadFromJsonAsync<WorkoutPlanResponse>();
+
+        var exerciseResponse = await client.PostAsJsonAsync("/api/exercises", new CreateExerciseRequest
+        {
+            Name = "Overhead Press",
+            MuscleGroup = "Shoulders",
+            Description = "Barbell overhead press"
+        });
+        var exercise = await exerciseResponse.Content.ReadFromJsonAsync<ExerciseResponse>();
+
+        await client.PostAsJsonAsync($"/api/workout-plans/{plan!.Id}/exercises", new AddWorkoutPlanExerciseRequest
+        {
+            ExerciseId = exercise!.Id,
+            Order = 1,
+            TargetSets = 5,
+            TargetReps = 5,
+            TargetWeight = 40m
+        });
+
+        var duplicateResponse = await client.PostAsync($"/api/workout-plans/{plan.Id}/duplicate", null);
+        Assert.Equal(HttpStatusCode.Created, duplicateResponse.StatusCode);
+        var copy = await duplicateResponse.Content.ReadFromJsonAsync<WorkoutPlanResponse>();
+
+        Assert.NotEqual(plan.Id, copy!.Id);
+        Assert.Equal("Push Day (Copy)", copy.Name);
+
+        var copyDetailResponse = await client.GetAsync($"/api/workout-plans/{copy.Id}");
+        var copyDetail = await copyDetailResponse.Content.ReadFromJsonAsync<WorkoutPlanDetailResponse>();
+
+        var copiedExercise = Assert.Single(copyDetail!.Exercises);
+        Assert.Equal(exercise.Id, copiedExercise.ExerciseId);
+        Assert.Equal(5, copiedExercise.TargetSets);
+        Assert.Equal(5, copiedExercise.TargetReps);
+        Assert.Equal(40m, copiedExercise.TargetWeight);
+    }
+
+    [Fact]
+    public async Task DuplicateWorkoutPlan_owned_by_other_user_returns_not_found()
+    {
+        var ownerClient = await CreateAuthenticatedClientAsync();
+        var planResponse = await ownerClient.PostAsJsonAsync("/api/workout-plans", new CreateWorkoutPlanRequest
+        {
+            Name = "Owner's Plan"
+        });
+        var plan = await planResponse.Content.ReadFromJsonAsync<WorkoutPlanResponse>();
+
+        var otherClient = await CreateAuthenticatedClientAsync();
+        var response = await otherClient.PostAsync($"/api/workout-plans/{plan!.Id}/duplicate", null);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetWorkoutPlan_owned_by_other_user_returns_not_found()
     {
         var ownerClient = await CreateAuthenticatedClientAsync();
