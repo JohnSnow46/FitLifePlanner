@@ -6,6 +6,7 @@
 @using FitLifePlanner.Web.Services
 @inject ProgressApiClient ProgressApiClient
 @inject NutritionApiClient NutritionApiClient
+@inject IJSRuntime JsRuntime
 
 <PageTitle>Meal Logs</PageTitle>
 
@@ -24,6 +25,9 @@
     </div>
     <div class="col-auto align-self-end">
         <button type="button" class="btn btn-outline-secondary" @onclick="LoadMealLogsAsync">Filter</button>
+    </div>
+    <div class="col-auto align-self-end">
+        <button type="button" class="btn btn-outline-secondary" @onclick="DownloadCsvAsync">Download CSV</button>
     </div>
 </div>
 
@@ -143,6 +147,20 @@ else
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private async Task DownloadCsvAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            var csv = await ProgressApiClient.ExportMealLogsCsvAsync(fromFilter, toFilter);
+            await JsRuntime.InvokeVoidAsync("downloadFile", "meal-logs.csv", "text/csv", csv);
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
         }
     }
 

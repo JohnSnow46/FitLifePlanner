@@ -293,4 +293,25 @@ public class WorkoutLogsControllerTests(TestApiFactory factory) : IClassFixture<
 
         Assert.Equal(expectedUtc, fetched.Date);
     }
+
+    [Fact]
+    public async Task ExportWorkoutLogs_returns_csv_with_header_and_rows()
+    {
+        var client = await CreateAuthenticatedClientAsync();
+        await client.PostAsJsonAsync("/api/workout-logs", new CreateWorkoutLogRequest
+        {
+            Date = DateTime.UtcNow.AddDays(-1),
+            Notes = "Leg day",
+            WorkoutPlanId = null
+        });
+
+        var response = await client.GetAsync("/api/workout-logs/export");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("text/csv", response.Content.Headers.ContentType?.MediaType);
+        var csv = await response.Content.ReadAsStringAsync();
+        var lines = csv.TrimEnd().Split('\n');
+        Assert.Equal("Date,WorkoutPlanId,EntriesCount,Notes", lines[0].TrimEnd('\r'));
+        Assert.Contains("Leg day", lines[1]);
+    }
 }

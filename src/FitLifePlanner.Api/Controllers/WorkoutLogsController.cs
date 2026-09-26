@@ -1,3 +1,4 @@
+using System.Text;
 using FitLifePlanner.Api.Common;
 using FitLifePlanner.Api.Contracts.Progress;
 using FitLifePlanner.Domain.Common;
@@ -32,6 +33,37 @@ public class WorkoutLogsController(FitLifePlannerDbContext context) : Controller
         var logs = await query.ToListAsync();
 
         return Ok(logs.Select(l => l.ToResponse()).ToList());
+    }
+
+    [HttpGet("workout-logs/export")]
+    public async Task<IActionResult> ExportWorkoutLogsAsync([FromQuery] DateTime? from, [FromQuery] DateTime? to)
+    {
+        var userId = User.GetUserId();
+
+        var query = context.WorkoutLogs.Include(l => l.Entries).Where(l => l.UserId == userId);
+
+        if (from is not null)
+        {
+            query = query.Where(l => l.Date >= from);
+        }
+
+        if (to is not null)
+        {
+            query = query.Where(l => l.Date <= to);
+        }
+
+        var logs = await query.OrderBy(l => l.Date).ToListAsync();
+
+        var rows = logs.Select(l => (IReadOnlyList<string>)new[]
+        {
+            l.Date.ToString("yyyy-MM-dd"),
+            l.WorkoutPlanId?.ToString() ?? "",
+            l.Entries.Count.ToString(),
+            l.Notes
+        });
+
+        var csv = CsvExport.ToCsv(["Date", "WorkoutPlanId", "EntriesCount", "Notes"], rows);
+        return File(Encoding.UTF8.GetBytes(csv), "text/csv", "workout-logs.csv");
     }
 
     [HttpGet("workout-logs/{id:int}")]

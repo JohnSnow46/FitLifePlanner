@@ -6,6 +6,7 @@
 @using FitLifePlanner.Web.Services
 @inject ProgressApiClient ProgressApiClient
 @inject UsersApiClient UsersApiClient
+@inject IJSRuntime JsRuntime
 
 <PageTitle>Body Metrics</PageTitle>
 
@@ -61,6 +62,9 @@
     </div>
     <div class="col-auto align-self-end">
         <button type="button" class="btn btn-outline-secondary" @onclick="LoadEntriesAsync">Filter</button>
+    </div>
+    <div class="col-auto align-self-end">
+        <button type="button" class="btn btn-outline-secondary" @onclick="DownloadCsvAsync">Download CSV</button>
     </div>
 </div>
 
@@ -210,6 +214,20 @@ else
             formModel.BodyFatPercent = null;
             formModel.Notes = string.Empty;
             await LoadEntriesAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task DownloadCsvAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            var csv = await ProgressApiClient.ExportBodyMetricEntriesCsvAsync(fromFilter, toFilter);
+            await JsRuntime.InvokeVoidAsync("downloadFile", "body-metrics.csv", "text/csv", csv);
         }
         catch (ApiException ex)
         {
