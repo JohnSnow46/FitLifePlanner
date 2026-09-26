@@ -32,7 +32,7 @@ in `docs/decisions.md`, not this list.
 | ~~Body metric goals (target weight/body fat + progress-to-goal indicator)~~ | Done — `User.SetGoals`, `PUT /api/users/me/goals`, goal section on the Body Metrics page | Fast (single additive field/entity + a computed display value, no migration risk beyond one new column) |
 | ~~CSV export of progress logs (workout/meal/body-metric history)~~ | Done — `GET /api/{workout-logs,meal-logs,body-metrics}/export` + "Download CSV" button on each Progress page (Blob download via a small `wwwroot/js/download.js`, no new dependency) | Fast (read-only endpoint(s) + client-side download, no new dependency) |
 | PWA / offline shell for `Web` | Blazor WASM already ships as a static app; installable + cached-shell is a template-level addition, not a new backend | Normal (service worker + manifest wiring; offline *data* sync explicitly out of scope — would be Deep) |
-| Reminder to log today's workout/meal (in-app banner, not push/email) | No nudge exists today if a user forgets to log; an external push/email channel is a real new integration, so start with the in-app version | Fast (derive "logged today?" from existing data, show a `Web`-only banner) — a push/email version would be Deep (new external service, ADR-worthy) |
+| ~~Reminder to log today's workout/meal (in-app banner, not push/email)~~ | Done — dashboard banner derived from the already-loaded 30-day workout/meal log window, no new endpoint | Fast (derive "logged today?" from existing data, show a `Web`-only banner) — a push/email version would be Deep (new external service, ADR-worthy) |
 
 Each row is a candidate ADR + ETAP entry when picked up, not a promise — re-evaluate
 against `CLAUDE.md`'s "portfolio project, don't design for scale it doesn't need" rule
