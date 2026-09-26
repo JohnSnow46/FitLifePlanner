@@ -271,6 +271,14 @@ namespace FitLifePlanner.Infrastructure.Postgres.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<decimal?>("TargetBodyFatPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<decimal?>("TargetWeight")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Email")

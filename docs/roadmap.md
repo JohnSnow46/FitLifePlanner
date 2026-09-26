@@ -17,3 +17,23 @@ tracks sequencing and status only.
 
 No business features are implemented before ETAP 1 is complete — see `CLAUDE.md`
 "Current status" for the authoritative current stage.
+
+## ETAP 8+ (post-MVP extension ideas)
+
+Not committed to, not sequenced — candidates for after ETAP 7 closes, each sized against
+the fast/normal/deep table in `CLAUDE.md`. Picking one still starts with `## ADR Notes`
+in `docs/decisions.md`, not this list.
+
+| Idea | Addresses | Rough size |
+|---|---|---|
+| Progress charts (body metrics over time, workout volume trend) on the dashboard | `BodyMetricEntry`/`WorkoutLog` history is already logged but only viewable as flat lists — no trend view | Normal (new `Web`-only aggregation + a charting component, no schema change) |
+| Weekly nutrition summary (macros logged vs. a per-user target) | `MealLog` entries exist per-meal but nothing aggregates a day/week against a goal | Normal (new read endpoint + aggregation logic + Web page; optional new `NutritionTarget` field is additive) |
+| Workout plan templates / "duplicate this plan" | Users building a new `WorkoutPlan` today start from empty — no reuse of a previous plan's exercise list | Fast/Normal (one new domain method cloning `WorkoutPlan` + `AddExercise` entries, one endpoint, one button) |
+| ~~Body metric goals (target weight/body fat + progress-to-goal indicator)~~ | Done — `User.SetGoals`, `PUT /api/users/me/goals`, goal section on the Body Metrics page | Fast (single additive field/entity + a computed display value, no migration risk beyond one new column) |
+| ~~CSV export of progress logs (workout/meal/body-metric history)~~ | Done — `GET /api/{workout-logs,meal-logs,body-metrics}/export` + "Download CSV" button on each Progress page (Blob download via a small `wwwroot/js/download.js`, no new dependency) | Fast (read-only endpoint(s) + client-side download, no new dependency) |
+| PWA / offline shell for `Web` | Blazor WASM already ships as a static app; installable + cached-shell is a template-level addition, not a new backend | Normal (service worker + manifest wiring; offline *data* sync explicitly out of scope — would be Deep) |
+| ~~Reminder to log today's workout/meal (in-app banner, not push/email)~~ | Done — dashboard banner derived from the already-loaded 30-day workout/meal log window, no new endpoint | Fast (derive "logged today?" from existing data, show a `Web`-only banner) — a push/email version would be Deep (new external service, ADR-worthy) |
+
+Each row is a candidate ADR + ETAP entry when picked up, not a promise — re-evaluate
+against `CLAUDE.md`'s "portfolio project, don't design for scale it doesn't need" rule
+before starting any of them.

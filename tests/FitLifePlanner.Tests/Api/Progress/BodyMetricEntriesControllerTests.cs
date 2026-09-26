@@ -102,4 +102,26 @@ public class BodyMetricEntriesControllerTests(TestApiFactory factory) : IClassFi
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Fact]
+    public async Task ExportBodyMetricEntries_returns_csv_with_header_and_rows()
+    {
+        var client = await CreateAuthenticatedClientAsync();
+        await client.PostAsJsonAsync("/api/body-metrics", new CreateBodyMetricEntryRequest
+        {
+            Date = DateTime.UtcNow.AddDays(-1),
+            Weight = 80m,
+            BodyFatPercent = 15m,
+            Notes = "Morning weigh-in"
+        });
+
+        var response = await client.GetAsync("/api/body-metrics/export");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("text/csv", response.Content.Headers.ContentType?.MediaType);
+        var csv = await response.Content.ReadAsStringAsync();
+        var lines = csv.TrimEnd().Split('\n');
+        Assert.Equal("Date,Weight,BodyFatPercent,Notes", lines[0].TrimEnd('\r'));
+        Assert.Contains("80,15,Morning weigh-in", lines[1]);
+    }
 }

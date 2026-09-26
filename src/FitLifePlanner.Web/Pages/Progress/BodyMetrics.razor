@@ -2,14 +2,54 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @using System.ComponentModel.DataAnnotations
 @using FitLifePlanner.Web.Contracts.Progress
+@using FitLifePlanner.Web.Contracts.Users
 @using FitLifePlanner.Web.Services
 @inject ProgressApiClient ProgressApiClient
+@inject UsersApiClient UsersApiClient
+@inject IJSRuntime JsRuntime
 
 <PageTitle>Body Metrics</PageTitle>
 
 <h1>Body Metrics</h1>
 
 <ErrorAlert Message="@errorMessage" />
+
+<h2>Goal</h2>
+
+<EditForm Model="goalsFormModel" OnValidSubmit="HandleSaveGoalsAsync">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="row mb-3">
+        <div class="col-auto">
+            <label for="targetWeight" class="form-label">Target weight</label>
+            <InputNumber id="targetWeight" class="form-control" @bind-Value="goalsFormModel.TargetWeight" />
+        </div>
+        <div class="col-auto">
+            <label for="targetBodyFatPercent" class="form-label">Target body fat %</label>
+            <InputNumber id="targetBodyFatPercent" class="form-control" @bind-Value="goalsFormModel.TargetBodyFatPercent" />
+        </div>
+        <div class="col-auto align-self-end">
+            <button type="submit" class="btn btn-outline-primary">Save goal</button>
+        </div>
+    </div>
+</EditForm>
+
+@if (latestEntry is not null && goalsFormModel.TargetWeight is decimal targetWeight)
+{
+    var remaining = latestEntry.Weight - targetWeight;
+    <p>
+        Latest weight @latestEntry.Weight, target @targetWeight —
+        @if (remaining == 0)
+        {
+            <strong>goal reached.</strong>
+        }
+        else
+        {
+            <strong>@Math.Abs(remaining).ToString("0.##") @(remaining > 0 ? "to lose" : "to gain").</strong>
+        }
+    </p>
+}
 
 <div class="row mb-3">
     <div class="col-auto">
@@ -22,6 +62,9 @@
     </div>
     <div class="col-auto align-self-end">
         <button type="button" class="btn btn-outline-secondary" @onclick="LoadEntriesAsync">Filter</button>
+    </div>
+    <div class="col-auto align-self-end">
+        <button type="button" class="btn btn-outline-secondary" @onclick="DownloadCsvAsync">Download CSV</button>
     </div>
 </div>
 
@@ -90,14 +133,50 @@ else
 @code {
     private IReadOnlyCollection<BodyMetricEntryResponse> entries = [];
     private readonly BodyMetricEntryFormModel formModel = new();
+    private readonly GoalsFormModel goalsFormModel = new();
     private DateTime? fromFilter;
     private DateTime? toFilter;
     private bool isLoading;
     private string? errorMessage;
 
+    private BodyMetricEntryResponse? latestEntry =>
+        entries.OrderByDescending(e => e.Date).FirstOrDefault();
+
     protected override async Task OnInitializedAsync()
     {
         await LoadEntriesAsync();
+        await LoadGoalsAsync();
+    }
+
+    private async Task LoadGoalsAsync()
+    {
+        try
+        {
+            var user = await UsersApiClient.GetCurrentUserAsync();
+            goalsFormModel.TargetWeight = user.TargetWeight;
+            goalsFormModel.TargetBodyFatPercent = user.TargetBodyFatPercent;
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task HandleSaveGoalsAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            await UsersApiClient.UpdateGoalsAsync(new UpdateBodyGoalsRequest
+            {
+                TargetWeight = goalsFormModel.TargetWeight,
+                TargetBodyFatPercent = goalsFormModel.TargetBodyFatPercent
+            });
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
     }
 
     private async Task LoadEntriesAsync()
@@ -142,6 +221,20 @@ else
         }
     }
 
+    private async Task DownloadCsvAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            var csv = await ProgressApiClient.ExportBodyMetricEntriesCsvAsync(fromFilter, toFilter);
+            await JsRuntime.InvokeVoidAsync("downloadFile", "body-metrics.csv", "text/csv", csv);
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
     private async Task DeleteEntryAsync(int id)
     {
         errorMessage = null;
@@ -167,5 +260,14 @@ else
         public decimal? BodyFatPercent { get; set; }
 
         public string Notes { get; set; } = string.Empty;
+    }
+
+    private sealed class GoalsFormModel
+    {
+        [Range(0.01, double.MaxValue)]
+        public decimal? TargetWeight { get; set; }
+
+        [Range(0, 100)]
+        public decimal? TargetBodyFatPercent { get; set; }
     }
 }

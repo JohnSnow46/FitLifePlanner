@@ -1,3 +1,4 @@
+using System.Text;
 using FitLifePlanner.Api.Common;
 using FitLifePlanner.Api.Contracts.Progress;
 using FitLifePlanner.Domain.Common;
@@ -32,6 +33,37 @@ public class MealLogsController(FitLifePlannerDbContext context) : ControllerBas
         var logs = await query.ToListAsync();
 
         return Ok(logs.Select(l => l.ToResponse()).ToList());
+    }
+
+    [HttpGet("meal-logs/export")]
+    public async Task<IActionResult> ExportMealLogsAsync([FromQuery] DateTime? from, [FromQuery] DateTime? to)
+    {
+        var userId = User.GetUserId();
+
+        var query = context.MealLogs.Where(l => l.UserId == userId);
+
+        if (from is not null)
+        {
+            query = query.Where(l => l.Date >= from);
+        }
+
+        if (to is not null)
+        {
+            query = query.Where(l => l.Date <= to);
+        }
+
+        var logs = await query.OrderBy(l => l.Date).ToListAsync();
+
+        var rows = logs.Select(l => (IReadOnlyList<string>)new[]
+        {
+            l.Date.ToString("yyyy-MM-dd"),
+            l.MealType.ToString(),
+            l.FoodId.ToString(),
+            l.QuantityConsumed.ToString("0.##")
+        });
+
+        var csv = CsvExport.ToCsv(["Date", "MealType", "FoodId", "QuantityConsumed"], rows);
+        return File(Encoding.UTF8.GetBytes(csv), "text/csv", "meal-logs.csv");
     }
 
     [HttpGet("meal-logs/{id:int}")]

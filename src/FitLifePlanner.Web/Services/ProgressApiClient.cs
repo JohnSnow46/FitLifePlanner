@@ -19,6 +19,14 @@ public class ProgressApiClient(HttpClient httpClient)
         return await ReadResponseAsync<IReadOnlyCollection<WorkoutLogResponse>>(response, cancellationToken);
     }
 
+    public async Task<string> ExportWorkoutLogsCsvAsync(DateTime? from = null, DateTime? to = null, CancellationToken cancellationToken = default)
+    {
+        var url = BuildDateRangeUrl("api/workout-logs/export", from, to);
+        var response = await httpClient.GetAsync(url, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+        return await response.Content.ReadAsStringAsync(cancellationToken);
+    }
+
     public async Task<WorkoutLogDetailResponse> GetWorkoutLogAsync(int id, CancellationToken cancellationToken = default)
     {
         var response = await httpClient.GetAsync($"api/workout-logs/{id}", cancellationToken);
@@ -56,6 +64,14 @@ public class ProgressApiClient(HttpClient httpClient)
         return await ReadResponseAsync<IReadOnlyCollection<MealLogResponse>>(response, cancellationToken);
     }
 
+    public async Task<string> ExportMealLogsCsvAsync(DateTime? from = null, DateTime? to = null, CancellationToken cancellationToken = default)
+    {
+        var url = BuildDateRangeUrl("api/meal-logs/export", from, to);
+        var response = await httpClient.GetAsync(url, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+        return await response.Content.ReadAsStringAsync(cancellationToken);
+    }
+
     public async Task<MealLogResponse> GetMealLogAsync(int id, CancellationToken cancellationToken = default)
     {
         var response = await httpClient.GetAsync($"api/meal-logs/{id}", cancellationToken);
@@ -79,6 +95,14 @@ public class ProgressApiClient(HttpClient httpClient)
         var url = BuildDateRangeUrl("api/body-metrics", from, to);
         var response = await httpClient.GetAsync(url, cancellationToken);
         return await ReadResponseAsync<IReadOnlyCollection<BodyMetricEntryResponse>>(response, cancellationToken);
+    }
+
+    public async Task<string> ExportBodyMetricEntriesCsvAsync(DateTime? from = null, DateTime? to = null, CancellationToken cancellationToken = default)
+    {
+        var url = BuildDateRangeUrl("api/body-metrics/export", from, to);
+        var response = await httpClient.GetAsync(url, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+        return await response.Content.ReadAsStringAsync(cancellationToken);
     }
 
     public async Task<BodyMetricEntryResponse> GetBodyMetricEntryAsync(int id, CancellationToken cancellationToken = default)

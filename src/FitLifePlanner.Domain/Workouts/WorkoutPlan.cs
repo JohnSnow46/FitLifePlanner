@@ -25,6 +25,21 @@ public class WorkoutPlan
             throw new ValidationException($"Order {order} is already used by another exercise in this workout plan.");
         }
 
+        if (targetSets <= 0)
+        {
+            throw new ValidationException("Target sets must be greater than zero.");
+        }
+
+        if (targetReps <= 0)
+        {
+            throw new ValidationException("Target reps must be greater than zero.");
+        }
+
+        if (targetWeight < 0)
+        {
+            throw new ValidationException("Target weight cannot be negative.");
+        }
+
         var exercise = new WorkoutPlanExercise
         {
             WorkoutPlanId = Id,

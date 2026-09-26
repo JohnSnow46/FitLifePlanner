@@ -154,4 +154,27 @@ public class MealLogsControllerTests(TestApiFactory factory) : IClassFixture<Tes
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Fact]
+    public async Task ExportMealLogs_returns_csv_with_header_and_rows()
+    {
+        var client = await CreateAuthenticatedClientAsync();
+        var foodId = await CreateFoodAsync(client, "Chicken Breast");
+        await client.PostAsJsonAsync("/api/meal-logs", new CreateMealLogRequest
+        {
+            Date = DateTime.UtcNow.AddDays(-1),
+            MealType = MealType.Lunch,
+            FoodId = foodId,
+            QuantityConsumed = 200m
+        });
+
+        var response = await client.GetAsync("/api/meal-logs/export");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("text/csv", response.Content.Headers.ContentType?.MediaType);
+        var csv = await response.Content.ReadAsStringAsync();
+        var lines = csv.TrimEnd().Split('\n');
+        Assert.Equal("Date,MealType,FoodId,QuantityConsumed", lines[0].TrimEnd('\r'));
+        Assert.Contains($"Lunch,{foodId},200", lines[1]);
+    }
 }

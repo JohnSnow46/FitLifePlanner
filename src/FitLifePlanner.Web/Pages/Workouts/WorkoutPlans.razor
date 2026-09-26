@@ -23,6 +23,7 @@ else
                 <th>Name</th>
                 <th>Created</th>
                 <th></th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -32,6 +33,7 @@ else
                     <td>@plan.Name</td>
                     <td>@plan.CreatedAt.ToLocalTime().ToString("g")</td>
                     <td><a href="/workout-plans/@plan.Id">Details</a></td>
+                    <td><button type="button" class="btn btn-link p-0" @onclick="() => DuplicateAsync(plan.Id)">Duplicate</button></td>
                 </tr>
             }
         </tbody>
@@ -78,6 +80,20 @@ else
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private async Task DuplicateAsync(int id)
+    {
+        errorMessage = null;
+        try
+        {
+            await WorkoutsApiClient.DuplicateWorkoutPlanAsync(id);
+            await LoadPlansAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
         }
     }
 

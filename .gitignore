@@ -10,6 +10,12 @@ Thumbs.db
 bin/
 obj/
 
+# IDE-specific files (already excluded from Docker build context via .dockerignore)
+.vs/
+.vscode/
+.idea/
+*.user
+
 # SQLite local dev database (ADR-0002) — never committed
 *.db
 *.db-shm
