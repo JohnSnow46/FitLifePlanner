@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using FitLifePlanner.Api.Contracts.Users;
 
@@ -6,6 +7,23 @@ namespace FitLifePlanner.Tests.Api.Controllers;
 
 public class UsersControllerTests(TestApiFactory factory) : IClassFixture<TestApiFactory>
 {
+    private async Task<HttpClient> CreateAuthenticatedClientAsync()
+    {
+        var client = factory.CreateClient();
+
+        var registerResponse = await client.PostAsJsonAsync("/api/auth/register", new UserRegisterRequest
+        {
+            Name = "Jan Kowalski",
+            Email = $"{Guid.NewGuid()}@example.com",
+            Password = "correct-horse-battery"
+        });
+
+        var body = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", body!.Token);
+
+        return client;
+    }
+
     [Fact]
     public async Task Register_with_new_email_returns_ok_with_token()
     {
@@ -171,6 +189,51 @@ public class UsersControllerTests(TestApiFactory factory) : IClassFixture<TestAp
         var client = factory.CreateClient();
 
         var response = await client.GetAsync("/api/users/me");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateGoals_with_valid_values_persists_them()
+    {
+        var client = await CreateAuthenticatedClientAsync();
+
+        var response = await client.PutAsJsonAsync("/api/users/me/goals", new UpdateBodyGoalsRequest
+        {
+            TargetWeight = 72.5m,
+            TargetBodyFatPercent = 14m
+        });
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var me = await client.GetFromJsonAsync<UserResponse>("/api/users/me");
+        Assert.Equal(72.5m, me!.TargetWeight);
+        Assert.Equal(14m, me.TargetBodyFatPercent);
+    }
+
+    [Fact]
+    public async Task UpdateGoals_with_non_positive_target_weight_returns_bad_request()
+    {
+        var client = await CreateAuthenticatedClientAsync();
+
+        var response = await client.PutAsJsonAsync("/api/users/me/goals", new UpdateBodyGoalsRequest
+        {
+            TargetWeight = 0m,
+            TargetBodyFatPercent = null
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateGoals_without_token_returns_unauthorized()
+    {
+        var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync("/api/users/me/goals", new UpdateBodyGoalsRequest
+        {
+            TargetWeight = 72.5m
+        });
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }

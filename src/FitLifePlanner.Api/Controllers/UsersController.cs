@@ -88,4 +88,19 @@ public class UsersController(
 
         return NoContent();
     }
+
+    [HttpPut("users/me/goals")]
+    public async Task<IActionResult> UpdateGoalsAsync(UpdateBodyGoalsRequest request)
+    {
+        var userId = User.GetUserId();
+
+        var user = await context.Users.FindAsync(userId)
+            ?? throw new NotFoundException("User", userId);
+
+        user.SetGoals(request.TargetWeight, request.TargetBodyFatPercent);
+
+        await context.SaveChangesAsync();
+
+        return NoContent();
+    }
 }
