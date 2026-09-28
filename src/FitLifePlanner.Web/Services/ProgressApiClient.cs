@@ -90,6 +90,13 @@ public class ProgressApiClient(HttpClient httpClient)
         await EnsureSuccessAsync(response, cancellationToken);
     }
 
+    public async Task<IReadOnlyCollection<NutritionDaySummaryResponse>> GetNutritionSummaryAsync(DateTime? from = null, DateTime? to = null, CancellationToken cancellationToken = default)
+    {
+        var url = BuildDateRangeUrl("api/meal-logs/summary", from, to);
+        var response = await httpClient.GetAsync(url, cancellationToken);
+        return await ReadResponseAsync<IReadOnlyCollection<NutritionDaySummaryResponse>>(response, cancellationToken);
+    }
+
     public async Task<IReadOnlyCollection<BodyMetricEntryResponse>> GetBodyMetricEntriesAsync(DateTime? from = null, DateTime? to = null, CancellationToken cancellationToken = default)
     {
         var url = BuildDateRangeUrl("api/body-metrics", from, to);
