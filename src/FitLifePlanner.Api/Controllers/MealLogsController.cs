@@ -35,6 +35,40 @@ public class MealLogsController(FitLifePlannerDbContext context) : ControllerBas
         return Ok(logs.Select(l => l.ToResponse()).ToList());
     }
 
+    [HttpGet("meal-logs/summary")]
+    public async Task<ActionResult<IReadOnlyCollection<NutritionDaySummaryResponse>>> GetNutritionSummaryAsync([FromQuery] DateTime? from, [FromQuery] DateTime? to)
+    {
+        var userId = User.GetUserId();
+
+        var rangeTo = (to ?? DateTime.UtcNow).Date;
+        var rangeFrom = (from ?? rangeTo.AddDays(-6)).Date;
+
+        var rows = await context.MealLogs
+            .Where(l => l.UserId == userId && l.Date.Date >= rangeFrom && l.Date.Date <= rangeTo)
+            .Join(context.Foods, l => l.FoodId, f => f.Id, (l, f) => new
+            {
+                l.Date,
+                Calories = l.QuantityConsumed * f.CaloriesPerUnit,
+                Protein = l.QuantityConsumed * f.ProteinPerUnit,
+                Carbs = l.QuantityConsumed * f.CarbsPerUnit,
+                Fat = l.QuantityConsumed * f.FatPerUnit
+            })
+            .ToListAsync();
+
+        var summary = rows
+            .GroupBy(x => x.Date.Date)
+            .Select(g => new NutritionDaySummaryResponse(
+                g.Key,
+                g.Sum(x => x.Calories),
+                g.Sum(x => x.Protein),
+                g.Sum(x => x.Carbs),
+                g.Sum(x => x.Fat)))
+            .OrderBy(s => s.Date)
+            .ToList();
+
+        return Ok(summary);
+    }
+
     [HttpGet("meal-logs/export")]
     public async Task<IActionResult> ExportMealLogsAsync([FromQuery] DateTime? from, [FromQuery] DateTime? to)
     {
