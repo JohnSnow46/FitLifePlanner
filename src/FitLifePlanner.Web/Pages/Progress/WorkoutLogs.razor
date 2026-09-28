@@ -37,12 +37,16 @@
 }
 else
 {
+    <h2>Trend</h2>
+    <TrendChart Points="@VolumeTrendPoints" Label="Volume" />
+
     <table class="table">
         <thead>
             <tr>
                 <th>Date</th>
                 <th>Notes</th>
                 <th>Workout Plan</th>
+                <th>Volume</th>
                 <th></th>
             </tr>
         </thead>
@@ -53,6 +57,7 @@ else
                     <td>@log.Date.ToLocalTime().ToString("d")</td>
                     <td>@log.Notes</td>
                     <td>@PlanName(log.WorkoutPlanId)</td>
+                    <td>@log.TotalVolume.ToString("0.##")</td>
                     <td>
                         <a href="/workout-logs/@log.Id" class="me-2">Details</a>
                         <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteLogAsync(log.Id)">Delete</button>
@@ -152,6 +157,9 @@ else
             errorMessage = ex.Message;
         }
     }
+
+    private IReadOnlyList<TrendChart.TrendPoint> VolumeTrendPoints =>
+        logs.Select(l => new TrendChart.TrendPoint(l.Date, l.TotalVolume)).ToList();
 
     private string PlanName(int? workoutPlanId) =>
         workoutPlanId is null

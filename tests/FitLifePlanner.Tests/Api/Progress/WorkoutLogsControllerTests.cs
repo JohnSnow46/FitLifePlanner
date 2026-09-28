@@ -295,6 +295,45 @@ public class WorkoutLogsControllerTests(TestApiFactory factory) : IClassFixture<
     }
 
     [Fact]
+    public async Task GetWorkoutLogs_returns_total_volume_summed_across_entries()
+    {
+        var client = await CreateAuthenticatedClientAsync();
+
+        var logResponse = await client.PostAsJsonAsync("/api/workout-logs", new CreateWorkoutLogRequest
+        {
+            Date = DateTime.UtcNow.AddDays(-1),
+            Notes = "Volume test",
+            WorkoutPlanId = null
+        });
+        var log = await logResponse.Content.ReadFromJsonAsync<WorkoutLogResponse>();
+
+        var squatId = await CreateExerciseAsync(client, "Squat");
+        var benchId = await CreateExerciseAsync(client, "Bench");
+
+        await client.PostAsJsonAsync($"/api/workout-logs/{log!.Id}/entries", new AddWorkoutLogEntryRequest
+        {
+            ExerciseId = squatId,
+            SetsCompleted = 4,
+            RepsCompleted = 8,
+            WeightUsed = 80m
+        });
+        await client.PostAsJsonAsync($"/api/workout-logs/{log.Id}/entries", new AddWorkoutLogEntryRequest
+        {
+            ExerciseId = benchId,
+            SetsCompleted = 3,
+            RepsCompleted = 10,
+            WeightUsed = 60m
+        });
+
+        var listResponse = await client.GetAsync("/api/workout-logs");
+        var logs = await listResponse.Content.ReadFromJsonAsync<List<WorkoutLogResponse>>();
+        var fetched = logs!.Single(l => l.Id == log.Id);
+
+        // 4*8*80 + 3*10*60 = 2560 + 1800 = 4360
+        Assert.Equal(4360m, fetched.TotalVolume);
+    }
+
+    [Fact]
     public async Task ExportWorkoutLogs_returns_csv_with_header_and_rows()
     {
         var client = await CreateAuthenticatedClientAsync();

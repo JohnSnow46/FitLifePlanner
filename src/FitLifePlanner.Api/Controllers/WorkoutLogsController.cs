@@ -18,7 +18,7 @@ public class WorkoutLogsController(FitLifePlannerDbContext context) : Controller
     {
         var userId = User.GetUserId();
 
-        var query = context.WorkoutLogs.Where(l => l.UserId == userId);
+        var query = context.WorkoutLogs.Include(l => l.Entries).Where(l => l.UserId == userId);
 
         if (from is not null)
         {

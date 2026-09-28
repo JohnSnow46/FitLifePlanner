@@ -74,6 +74,9 @@
 }
 else
 {
+    <h2>Trend</h2>
+    <TrendChart Points="@WeightTrendPoints" Label="Weight" />
+
     <table class="table">
         <thead>
             <tr>
@@ -141,6 +144,9 @@ else
 
     private BodyMetricEntryResponse? latestEntry =>
         entries.OrderByDescending(e => e.Date).FirstOrDefault();
+
+    private IReadOnlyList<TrendChart.TrendPoint> WeightTrendPoints =>
+        entries.Select(e => new TrendChart.TrendPoint(e.Date, e.Weight)).ToList();
 
     protected override async Task OnInitializedAsync()
     {
