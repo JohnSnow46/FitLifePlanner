@@ -28,6 +28,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.TargetBodyFatPercent)
             .HasPrecision(5, 2);
 
+        builder.Property(u => u.DailyCalorieTarget)
+            .HasPrecision(10, 2);
+
         builder.HasIndex(u => u.Email)
             .IsUnique();
     }

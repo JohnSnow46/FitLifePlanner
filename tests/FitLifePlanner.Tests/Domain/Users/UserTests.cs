@@ -45,4 +45,33 @@ public class UserTests
 
         Assert.Throws<ValidationException>(() => user.SetGoals(75m, targetBodyFatPercent));
     }
+
+    [Fact]
+    public void SetNutritionTarget_sets_daily_calorie_target()
+    {
+        var user = new User();
+
+        user.SetNutritionTarget(2200m);
+
+        Assert.Equal(2200m, user.DailyCalorieTarget);
+    }
+
+    [Fact]
+    public void SetNutritionTarget_with_null_clears_target()
+    {
+        var user = new User();
+        user.SetNutritionTarget(2200m);
+
+        user.SetNutritionTarget(null);
+
+        Assert.Null(user.DailyCalorieTarget);
+    }
+
+    [Fact]
+    public void SetNutritionTarget_with_non_positive_value_throws_ValidationException()
+    {
+        var user = new User();
+
+        Assert.Throws<ValidationException>(() => user.SetNutritionTarget(0m));
+    }
 }

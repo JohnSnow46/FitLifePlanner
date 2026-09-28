@@ -10,6 +10,7 @@ public class User
     public string PasswordHash { get; set; } = string.Empty;
     public decimal? TargetWeight { get; set; }
     public decimal? TargetBodyFatPercent { get; set; }
+    public decimal? DailyCalorieTarget { get; set; }
 
     public void SetGoals(decimal? targetWeight, decimal? targetBodyFatPercent)
     {
@@ -25,5 +26,15 @@ public class User
 
         TargetWeight = targetWeight;
         TargetBodyFatPercent = targetBodyFatPercent;
+    }
+
+    public void SetNutritionTarget(decimal? dailyCalorieTarget)
+    {
+        if (dailyCalorieTarget <= 0)
+        {
+            throw new ValidationException("Daily calorie target must be greater than zero.");
+        }
+
+        DailyCalorieTarget = dailyCalorieTarget;
     }
 }

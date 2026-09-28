@@ -237,4 +237,46 @@ public class UsersControllerTests(TestApiFactory factory) : IClassFixture<TestAp
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
+
+    [Fact]
+    public async Task UpdateNutritionTarget_with_valid_value_persists_it()
+    {
+        var client = await CreateAuthenticatedClientAsync();
+
+        var response = await client.PutAsJsonAsync("/api/users/me/nutrition-target", new UpdateNutritionTargetRequest
+        {
+            DailyCalorieTarget = 2200m
+        });
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var me = await client.GetFromJsonAsync<UserResponse>("/api/users/me");
+        Assert.Equal(2200m, me!.DailyCalorieTarget);
+    }
+
+    [Fact]
+    public async Task UpdateNutritionTarget_with_non_positive_value_returns_bad_request()
+    {
+        var client = await CreateAuthenticatedClientAsync();
+
+        var response = await client.PutAsJsonAsync("/api/users/me/nutrition-target", new UpdateNutritionTargetRequest
+        {
+            DailyCalorieTarget = 0m
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateNutritionTarget_without_token_returns_unauthorized()
+    {
+        var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync("/api/users/me/nutrition-target", new UpdateNutritionTargetRequest
+        {
+            DailyCalorieTarget = 2200m
+        });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 }

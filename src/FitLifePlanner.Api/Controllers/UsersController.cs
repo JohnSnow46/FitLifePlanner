@@ -103,4 +103,19 @@ public class UsersController(
 
         return NoContent();
     }
+
+    [HttpPut("users/me/nutrition-target")]
+    public async Task<IActionResult> UpdateNutritionTargetAsync(UpdateNutritionTargetRequest request)
+    {
+        var userId = User.GetUserId();
+
+        var user = await context.Users.FindAsync(userId)
+            ?? throw new NotFoundException("User", userId);
+
+        user.SetNutritionTarget(request.DailyCalorieTarget);
+
+        await context.SaveChangesAsync();
+
+        return NoContent();
+    }
 }

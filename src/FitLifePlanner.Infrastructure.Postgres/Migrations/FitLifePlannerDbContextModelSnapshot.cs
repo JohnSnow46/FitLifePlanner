@@ -256,6 +256,10 @@ namespace FitLifePlanner.Infrastructure.Postgres.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal?>("DailyCalorieTarget")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(200)
