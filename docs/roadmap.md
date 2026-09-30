@@ -31,9 +31,17 @@ in `docs/decisions.md`, not this list.
 | ~~Workout plan templates / "duplicate this plan"~~ | Done — `POST /api/workout-plans/{id}/duplicate` + "Duplicate" button on the Workout Plans page (2026-09-25, commit `3c97847`). This row was stale (still listed as open) until corrected 2026-09-28. | Fast/Normal (one new domain method cloning `WorkoutPlan` + `AddExercise` entries, one endpoint, one button) |
 | ~~Body metric goals (target weight/body fat + progress-to-goal indicator)~~ | Done — `User.SetGoals`, `PUT /api/users/me/goals`, goal section on the Body Metrics page | Fast (single additive field/entity + a computed display value, no migration risk beyond one new column) |
 | ~~CSV export of progress logs (workout/meal/body-metric history)~~ | Done — `GET /api/{workout-logs,meal-logs,body-metrics}/export` + "Download CSV" button on each Progress page (Blob download via a small `wwwroot/js/download.js`, no new dependency) | Fast (read-only endpoint(s) + client-side download, no new dependency) |
-| PWA / offline shell for `Web` | Blazor WASM already ships as a static app; installable + cached-shell is a template-level addition, not a new backend | Normal (service worker + manifest wiring; offline *data* sync explicitly out of scope — would be Deep) |
+| ~~PWA / offline shell for `Web`~~ | Done — `manifest.json`, dev-mode no-op `service-worker.js` swapped for `service-worker.published.js` on publish (offline-caches the static shell), registered from `index.html` (2026-09-30, commit `c4b520b`). Offline *data* sync stays out of scope. | Normal (service worker + manifest wiring; offline *data* sync explicitly out of scope — would be Deep) |
 | ~~Reminder to log today's workout/meal (in-app banner, not push/email)~~ | Done — dashboard banner derived from the already-loaded 30-day workout/meal log window, no new endpoint | Fast (derive "logged today?" from existing data, show a `Web`-only banner) — a push/email version would be Deep (new external service, ADR-worthy) |
 
 Each row is a candidate ADR + ETAP entry when picked up, not a promise — re-evaluate
 against `CLAUDE.md`'s "portfolio project, don't design for scale it doesn't need" rule
 before starting any of them.
+
+## ETAP 9+ (proposed 2026-09-30 — all ETAP 8+ rows above are now done)
+
+| Idea | Addresses | Rough size |
+|---|---|---|
+| Exercise catalog search/filter by muscle group | `Exercise.MuscleGroup` already exists on every row, but `Exercises.razor` shows a flat unfiltered list — grows unwieldy past a handful of entries | Fast (client-side filter over already-loaded data, no new endpoint) |
+| Live macro/calorie running total while building a meal plan | `Food` already carries per-100g macros; `MealPlanDetail` only shows the total after saving each entry, not while composing one | Fast (Web-only computed display, reuses existing `Food` fields) |
+| Demo seed command/script for recruiter walkthroughs | ETAP 7's "demo polish (README screenshots)" item is still open per `CLAUDE.md` "Current status" — a fresh clone has no data to screenshot or click through | Fast/Normal (a seed script or `dotnet run --seed-demo` flag populating a few sample entities; no schema change) |
