@@ -11,6 +11,9 @@
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <link href="FitLifePlanner.Web.styles.css" rel="stylesheet" />
+    <link href="manifest.json" rel="manifest" />
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
+    <meta name="theme-color" content="#0d6efd" />
     <script type="importmap"></script>
 </head>
 
@@ -30,6 +33,11 @@
     </div>
     <script src="js/download.js"></script>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js');
+        }
+    </script>
 </body>
 
 </html>
