@@ -12,15 +12,15 @@ public record CreateFoodRequest
     [MaxLength(50)]
     public string Unit { get; init; } = string.Empty;
 
-    [Required]
+    [Range(0, double.MaxValue)]
     public decimal CaloriesPerUnit { get; init; }
 
-    [Required]
+    [Range(0, double.MaxValue)]
     public decimal ProteinPerUnit { get; init; }
 
-    [Required]
+    [Range(0, double.MaxValue)]
     public decimal CarbsPerUnit { get; init; }
 
-    [Required]
+    [Range(0, double.MaxValue)]
     public decimal FatPerUnit { get; init; }
 }

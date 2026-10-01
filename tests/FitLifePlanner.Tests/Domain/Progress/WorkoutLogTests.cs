@@ -29,6 +29,15 @@ public class WorkoutLogTests
     }
 
     [Fact]
+    public void Create_with_notes_over_2000_characters_throws_ValidationException()
+    {
+        var tooLongNotes = new string('a', 2001);
+
+        Assert.Throws<ValidationException>(() =>
+            WorkoutLog.Create(userId: 1, date: DateTime.UtcNow, notes: tooLongNotes, workoutPlanId: null));
+    }
+
+    [Fact]
     public void AddEntry_adds_entry_to_log()
     {
         var log = WorkoutLog.Create(userId: 1, date: DateTime.UtcNow, notes: "Leg day", workoutPlanId: null);

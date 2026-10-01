@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using FitLifePlanner.Api.Contracts.Common;
 using FitLifePlanner.Domain.Nutrition;
 
 namespace FitLifePlanner.Api.Contracts.Progress;
@@ -6,9 +7,11 @@ namespace FitLifePlanner.Api.Contracts.Progress;
 public record CreateMealLogRequest
 {
     [Required]
+    [NotInFuture]
     public DateTime Date { get; init; }
 
     [Required]
+    [EnumDataType(typeof(MealType))]
     public MealType MealType { get; init; }
 
     [Required]

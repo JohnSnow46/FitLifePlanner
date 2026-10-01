@@ -56,6 +56,15 @@ else if (plan is not null)
                 </tr>
             }
         </tbody>
+        @if (plan.Entries.Count > 0)
+        {
+            <tfoot>
+                <tr class="fw-bold">
+                    <td colspan="3">Plan totals</td>
+                    <td colspan="2">@FormatMacros(PlanTotals)</td>
+                </tr>
+            </tfoot>
+        }
     </table>
 
     <h3>Add entry</h3>
@@ -99,6 +108,11 @@ else if (plan is not null)
             <label for="quantity" class="form-label">Quantity</label>
             <InputNumber id="quantity" class="form-control" @bind-Value="addEntryFormModel.Quantity" />
         </div>
+
+        @if (PendingEntryMacros is { } pendingMacros)
+        {
+            <p class="text-muted">This entry adds: @FormatMacros(pendingMacros)</p>
+        }
 
         <button type="submit" class="btn btn-primary">Add entry</button>
     </EditForm>
@@ -156,6 +170,37 @@ else if (plan is not null)
 
     private string FoodName(int foodId) =>
         foodCatalog.FirstOrDefault(f => f.Id == foodId)?.Name ?? $"#{foodId}";
+
+    private MacroTotals PlanTotals =>
+        plan is null
+            ? new MacroTotals(0, 0, 0, 0)
+            : plan.Entries.Aggregate(new MacroTotals(0, 0, 0, 0), (totals, entry) => totals + MacrosFor(entry.FoodId, entry.Quantity));
+
+    private MacroTotals? PendingEntryMacros =>
+        addEntryFormModel.FoodId <= 0 || addEntryFormModel.Quantity <= 0
+            ? null
+            : MacrosFor(addEntryFormModel.FoodId, addEntryFormModel.Quantity);
+
+    private MacroTotals MacrosFor(int foodId, decimal quantity)
+    {
+        var food = foodCatalog.FirstOrDefault(f => f.Id == foodId);
+        return food is null
+            ? new MacroTotals(0, 0, 0, 0)
+            : new MacroTotals(
+                food.CaloriesPerUnit * quantity,
+                food.ProteinPerUnit * quantity,
+                food.CarbsPerUnit * quantity,
+                food.FatPerUnit * quantity);
+    }
+
+    private static string FormatMacros(MacroTotals macros) =>
+        $"{macros.Calories:0.#} kcal, {macros.Protein:0.#} g protein, {macros.Carbs:0.#} g carbs, {macros.Fat:0.#} g fat";
+
+    private readonly record struct MacroTotals(decimal Calories, decimal Protein, decimal Carbs, decimal Fat)
+    {
+        public static MacroTotals operator +(MacroTotals a, MacroTotals b) =>
+            new(a.Calories + b.Calories, a.Protein + b.Protein, a.Carbs + b.Carbs, a.Fat + b.Fat);
+    }
 
     private async Task HandleRenameAsync()
     {

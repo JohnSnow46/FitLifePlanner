@@ -23,6 +23,26 @@ public class UsersApiClient(HttpClient httpClient)
         return await ReadResponseAsync<UserResponse>(response, cancellationToken);
     }
 
+    public async Task UpdateGoalsAsync(UpdateBodyGoalsRequest request, CancellationToken cancellationToken = default)
+    {
+        var response = await httpClient.PutAsJsonAsync("api/users/me/goals", request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            var message = await ExtractErrorMessageAsync(response, cancellationToken);
+            throw new ApiException(response.StatusCode, message);
+        }
+    }
+
+    public async Task UpdateNutritionTargetAsync(UpdateNutritionTargetRequest request, CancellationToken cancellationToken = default)
+    {
+        var response = await httpClient.PutAsJsonAsync("api/users/me/nutrition-target", request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            var message = await ExtractErrorMessageAsync(response, cancellationToken);
+            throw new ApiException(response.StatusCode, message);
+        }
+    }
+
     private static async Task<T> ReadResponseAsync<T>(HttpResponseMessage response, CancellationToken cancellationToken)
     {
         if (!response.IsSuccessStatusCode)

@@ -15,7 +15,7 @@ namespace FitLifePlanner.Infrastructure.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.5");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
 
             modelBuilder.Entity("FitLifePlanner.Domain.Nutrition.Food", b =>
                 {
@@ -235,6 +235,10 @@ namespace FitLifePlanner.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<decimal?>("DailyCalorieTarget")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -248,6 +252,14 @@ namespace FitLifePlanner.Infrastructure.Migrations
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("TargetBodyFatPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("TargetWeight")
+                        .HasPrecision(10, 2)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");

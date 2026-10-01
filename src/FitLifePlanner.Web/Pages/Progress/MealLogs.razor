@@ -3,15 +3,75 @@
 @using System.ComponentModel.DataAnnotations
 @using FitLifePlanner.Web.Contracts.Nutrition
 @using FitLifePlanner.Web.Contracts.Progress
+@using FitLifePlanner.Web.Contracts.Users
 @using FitLifePlanner.Web.Services
 @inject ProgressApiClient ProgressApiClient
 @inject NutritionApiClient NutritionApiClient
+@inject UsersApiClient UsersApiClient
+@inject IJSRuntime JsRuntime
 
 <PageTitle>Meal Logs</PageTitle>
 
 <h1>Meal Logs</h1>
 
 <ErrorAlert Message="@errorMessage" />
+
+<h2>Weekly summary</h2>
+
+<EditForm Model="targetFormModel" OnValidSubmit="HandleSaveTargetAsync">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="row mb-3">
+        <div class="col-auto">
+            <label for="dailyCalorieTarget" class="form-label">Daily calorie target</label>
+            <InputNumber id="dailyCalorieTarget" class="form-control" @bind-Value="targetFormModel.DailyCalorieTarget" />
+        </div>
+        <div class="col-auto align-self-end">
+            <button type="submit" class="btn btn-outline-primary">Save target</button>
+        </div>
+    </div>
+</EditForm>
+
+@if (weeklySummary.Count == 0)
+{
+    <p>No meals logged in the last 7 days.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Calories</th>
+                <th>Protein</th>
+                <th>Carbs</th>
+                <th>Fat</th>
+                @if (targetFormModel.DailyCalorieTarget is not null)
+                {
+                    <th>vs. target</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var day in weeklySummary)
+            {
+                <tr>
+                    <td>@day.Date.ToString("d")</td>
+                    <td>@day.Calories.ToString("0")</td>
+                    <td>@day.Protein.ToString("0")</td>
+                    <td>@day.Carbs.ToString("0")</td>
+                    <td>@day.Fat.ToString("0")</td>
+                    @if (targetFormModel.DailyCalorieTarget is decimal target)
+                    {
+                        var remaining = target - day.Calories;
+                        <td>@(remaining >= 0 ? $"{remaining:0} under" : $"{-remaining:0} over")</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}
 
 <div class="row mb-3">
     <div class="col-auto">
@@ -24,6 +84,9 @@
     </div>
     <div class="col-auto align-self-end">
         <button type="button" class="btn btn-outline-secondary" @onclick="LoadMealLogsAsync">Filter</button>
+    </div>
+    <div class="col-auto align-self-end">
+        <button type="button" class="btn btn-outline-secondary" @onclick="DownloadCsvAsync">Download CSV</button>
     </div>
 </div>
 
@@ -103,7 +166,9 @@ else
 @code {
     private IReadOnlyCollection<MealLogResponse> mealLogs = [];
     private IReadOnlyCollection<FoodResponse> foodCatalog = [];
+    private IReadOnlyCollection<NutritionDaySummaryResponse> weeklySummary = [];
     private readonly MealLogFormModel formModel = new();
+    private readonly NutritionTargetFormModel targetFormModel = new();
     private DateTime? fromFilter;
     private DateTime? toFilter;
     private bool isLoading;
@@ -117,6 +182,9 @@ else
         {
             foodCatalog = await NutritionApiClient.GetFoodsAsync();
             mealLogs = await ProgressApiClient.GetMealLogsAsync(fromFilter, toFilter);
+            weeklySummary = await ProgressApiClient.GetNutritionSummaryAsync();
+            var user = await UsersApiClient.GetCurrentUserAsync();
+            targetFormModel.DailyCalorieTarget = user.DailyCalorieTarget;
         }
         catch (ApiException ex)
         {
@@ -128,6 +196,22 @@ else
         }
     }
 
+    private async Task HandleSaveTargetAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            await UsersApiClient.UpdateNutritionTargetAsync(new UpdateNutritionTargetRequest
+            {
+                DailyCalorieTarget = targetFormModel.DailyCalorieTarget
+            });
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
     private async Task LoadMealLogsAsync()
     {
         isLoading = true;
@@ -135,6 +219,7 @@ else
         try
         {
             mealLogs = await ProgressApiClient.GetMealLogsAsync(fromFilter, toFilter);
+            weeklySummary = await ProgressApiClient.GetNutritionSummaryAsync();
         }
         catch (ApiException ex)
         {
@@ -143,6 +228,20 @@ else
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private async Task DownloadCsvAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            var csv = await ProgressApiClient.ExportMealLogsCsvAsync(fromFilter, toFilter);
+            await JsRuntime.InvokeVoidAsync("downloadFile", "meal-logs.csv", "text/csv", csv);
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
         }
     }
 
@@ -200,5 +299,11 @@ else
 
         [Range(0.01, double.MaxValue)]
         public decimal QuantityConsumed { get; set; }
+    }
+
+    private sealed class NutritionTargetFormModel
+    {
+        [Range(0.01, double.MaxValue)]
+        public decimal? DailyCalorieTarget { get; set; }
     }
 }

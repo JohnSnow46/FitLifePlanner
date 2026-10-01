@@ -24,6 +24,25 @@
 
         <ErrorAlert Message="@errorMessage" />
 
+        @if (!isLoading && (!loggedWorkoutToday || !loggedMealToday))
+        {
+            <div class="alert alert-info">
+                @if (!loggedWorkoutToday && !loggedMealToday)
+                {
+                    <text>You haven't logged a workout or a meal today.</text>
+                }
+                else if (!loggedWorkoutToday)
+                {
+                    <text>You haven't logged a workout today.</text>
+                }
+                else
+                {
+                    <text>You haven't logged a meal today.</text>
+                }
+                <a href="/workout-logs">Log workout</a> &middot; <a href="/meal-logs">Log meal</a>
+            </div>
+        }
+
         @if (isLoading)
         {
             <LoadingIndicator />
@@ -129,6 +148,8 @@
     private BodyMetricEntryResponse? latestBodyMetric;
     private IReadOnlyCollection<WorkoutLogResponse> recentWorkoutLogs = [];
     private IReadOnlyCollection<MealLogResponse> recentMealLogs = [];
+    private bool loggedWorkoutToday;
+    private bool loggedMealToday;
 
     protected override async Task OnInitializedAsync()
     {
@@ -157,6 +178,8 @@
             recentWorkoutLogs = workoutLogsTask.Result.OrderByDescending(log => log.Date).Take(5).ToList();
             recentMealLogs = mealLogsTask.Result.OrderByDescending(log => log.Date).Take(5).ToList();
             latestBodyMetric = bodyMetricsTask.Result.OrderByDescending(entry => entry.Date).FirstOrDefault();
+            loggedWorkoutToday = workoutLogsTask.Result.Any(log => log.Date.ToLocalTime().Date == DateTime.Today);
+            loggedMealToday = mealLogsTask.Result.Any(log => log.Date.ToLocalTime().Date == DateTime.Today);
         }
         catch (ApiException ex)
         {
