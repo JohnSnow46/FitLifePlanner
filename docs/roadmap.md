@@ -42,7 +42,7 @@ before starting any of them.
 
 | Idea | Addresses | Rough size |
 |---|---|---|
-| Exercise catalog search/filter by muscle group | `Exercise.MuscleGroup` already exists on every row, but `Exercises.razor` shows a flat unfiltered list — grows unwieldy past a handful of entries | Fast (client-side filter over already-loaded data, no new endpoint) |
+| ~~Exercise catalog search/filter by muscle group~~ | Done — `Exercises.razor` filters the already-loaded list by muscle group as you type (case-insensitive substring), no button and no extra API call | Fast (client-side filter over already-loaded data, no new endpoint) |
 | Live macro/calorie running total while building a meal plan | `Food` already carries per-100g macros; `MealPlanDetail` only shows the total after saving each entry, not while composing one | Fast (Web-only computed display, reuses existing `Food` fields) |
 | Demo seed command/script for recruiter walkthroughs | ETAP 7's "demo polish (README screenshots)" item is still open per `CLAUDE.md` "Current status" — a fresh clone has no data to screenshot or click through | Fast/Normal (a seed script or `dotnet run --seed-demo` flag populating a few sample entities; no schema change) |
 | Account settings page (change password, edit nutrition target / body goals in one place) | There's no way to change a password after registration at all; nutrition target is edited inline on the Meal Logs page and goals inline on Body Metrics — no single "my account" screen, and `NavMenu.razor` has no settings/account link | Normal (new page + new password-change endpoint touching auth indirectly; consolidating the two existing inline forms is Fast on its own) |
