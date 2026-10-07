@@ -32,6 +32,12 @@ public class WorkoutsApiClient(HttpClient httpClient)
         await EnsureSuccessAsync(response, cancellationToken);
     }
 
+    public async Task SetExerciseFavoriteAsync(int id, bool isFavorite, CancellationToken cancellationToken = default)
+    {
+        var response = await httpClient.PutAsJsonAsync($"api/exercises/{id}/favorite", new SetExerciseFavoriteRequest { IsFavorite = isFavorite }, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+    }
+
     public async Task DeleteExerciseAsync(int id, CancellationToken cancellationToken = default)
     {
         var response = await httpClient.DeleteAsync($"api/exercises/{id}", cancellationToken);

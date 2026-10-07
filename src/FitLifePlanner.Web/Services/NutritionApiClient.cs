@@ -36,6 +36,12 @@ public class NutritionApiClient(HttpClient httpClient)
         await EnsureSuccessAsync(response, cancellationToken);
     }
 
+    public async Task SetFoodFavoriteAsync(int id, bool isFavorite, CancellationToken cancellationToken = default)
+    {
+        var response = await httpClient.PutAsJsonAsync($"api/foods/{id}/favorite", new SetFoodFavoriteRequest { IsFavorite = isFavorite }, JsonOptions, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+    }
+
     public async Task DeleteFoodAsync(int id, CancellationToken cancellationToken = default)
     {
         var response = await httpClient.DeleteAsync($"api/foods/{id}", cancellationToken);

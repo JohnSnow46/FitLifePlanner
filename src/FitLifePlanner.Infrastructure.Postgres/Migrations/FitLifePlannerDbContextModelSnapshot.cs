@@ -42,6 +42,9 @@ namespace FitLifePlanner.Infrastructure.Postgres.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)");
 
+                    b.Property<bool>("IsFavorite")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -303,6 +306,9 @@ namespace FitLifePlanner.Infrastructure.Postgres.Migrations
                         .IsRequired()
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
+
+                    b.Property<bool>("IsFavorite")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("MuscleGroup")
                         .IsRequired()

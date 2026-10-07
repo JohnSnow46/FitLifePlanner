@@ -66,6 +66,19 @@ public class NutritionController(FitLifePlannerDbContext context) : ControllerBa
         return NoContent();
     }
 
+    [HttpPut("foods/{id:int}/favorite")]
+    public async Task<IActionResult> SetFoodFavoriteAsync(int id, SetFoodFavoriteRequest request)
+    {
+        var food = await context.Foods.FindAsync(id)
+            ?? throw new NotFoundException("Food", id);
+
+        food.IsFavorite = request.IsFavorite;
+
+        await context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
     [HttpDelete("foods/{id:int}")]
     public async Task<IActionResult> DeleteFoodAsync(int id)
     {

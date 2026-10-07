@@ -20,6 +20,7 @@ else
     <table class="table">
         <thead>
             <tr>
+                <th></th>
                 <th>Name</th>
                 <th>Unit</th>
                 <th>Calories/unit</th>
@@ -30,9 +31,14 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var food in foods)
+            @foreach (var food in VisibleFoods)
             {
                 <tr>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-link p-0" aria-label="@(food.IsFavorite ? "Remove from favorites" : "Mark as favorite")" aria-pressed="@food.IsFavorite" @onclick="() => ToggleFavoriteAsync(food)">
+                            <span aria-hidden="true">@(food.IsFavorite ? "★" : "☆")</span>
+                        </button>
+                    </td>
                     <td>@food.Name</td>
                     <td>@food.Unit</td>
                     <td>@food.CaloriesPerUnit</td>
@@ -98,6 +104,9 @@ else
     private readonly FoodFormModel formModel = new();
     private bool isLoading;
     private string? errorMessage;
+
+    private IEnumerable<FoodResponse> VisibleFoods =>
+        foods.OrderByDescending(f => f.IsFavorite).ThenBy(f => f.Name);
 
     protected override async Task OnInitializedAsync()
     {
@@ -175,6 +184,20 @@ else
             }
 
             CancelEdit();
+            await LoadFoodsAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task ToggleFavoriteAsync(FoodResponse food)
+    {
+        errorMessage = null;
+        try
+        {
+            await NutritionApiClient.SetFoodFavoriteAsync(food.Id, !food.IsFavorite);
             await LoadFoodsAsync();
         }
         catch (ApiException ex)

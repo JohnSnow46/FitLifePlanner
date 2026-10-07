@@ -67,6 +67,19 @@ public class WorkoutsController(FitLifePlannerDbContext context) : ControllerBas
         return NoContent();
     }
 
+    [HttpPut("exercises/{id:int}/favorite")]
+    public async Task<IActionResult> SetExerciseFavoriteAsync(int id, SetExerciseFavoriteRequest request)
+    {
+        var exercise = await context.Exercises.FindAsync(id)
+            ?? throw new NotFoundException("Exercise", id);
+
+        exercise.IsFavorite = request.IsFavorite;
+
+        await context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
     [HttpDelete("exercises/{id:int}")]
     public async Task<IActionResult> DeleteExerciseAsync(int id)
     {

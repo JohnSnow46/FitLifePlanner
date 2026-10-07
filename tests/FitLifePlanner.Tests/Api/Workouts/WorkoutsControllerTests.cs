@@ -311,4 +311,29 @@ public class WorkoutsControllerTests(TestApiFactory factory) : IClassFixture<Tes
         var exercises = await getResponse.Content.ReadFromJsonAsync<List<ExerciseResponse>>();
         Assert.Contains(exercises!, e => e.Id == exercise.Id);
     }
+
+    [Fact]
+    public async Task SetExerciseFavorite_updates_the_flag()
+    {
+        var client = await CreateAuthenticatedClientAsync();
+
+        var exerciseResponse = await client.PostAsJsonAsync("/api/exercises", new CreateExerciseRequest
+        {
+            Name = "Squat",
+            MuscleGroup = "Legs",
+            Description = "Barbell back squat"
+        });
+        var exercise = await exerciseResponse.Content.ReadFromJsonAsync<ExerciseResponse>();
+        Assert.False(exercise!.IsFavorite);
+
+        var favoriteResponse = await client.PutAsJsonAsync($"/api/exercises/{exercise.Id}/favorite", new SetExerciseFavoriteRequest
+        {
+            IsFavorite = true
+        });
+        Assert.Equal(HttpStatusCode.NoContent, favoriteResponse.StatusCode);
+
+        var getResponse = await client.GetAsync($"/api/exercises/{exercise.Id}");
+        var updated = await getResponse.Content.ReadFromJsonAsync<ExerciseResponse>();
+        Assert.True(updated!.IsFavorite);
+    }
 }

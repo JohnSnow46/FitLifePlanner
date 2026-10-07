@@ -277,4 +277,32 @@ public class NutritionControllerTests(TestApiFactory factory) : IClassFixture<Te
         var foods = await getResponse.Content.ReadFromJsonAsync<List<FoodResponse>>();
         Assert.Contains(foods!, f => f.Id == food.Id);
     }
+
+    [Fact]
+    public async Task SetFoodFavorite_updates_the_flag()
+    {
+        var client = await CreateAuthenticatedClientAsync();
+
+        var foodResponse = await client.PostAsJsonAsync("/api/foods", new CreateFoodRequest
+        {
+            Name = "Oats",
+            Unit = "100g",
+            CaloriesPerUnit = 389,
+            ProteinPerUnit = 17,
+            CarbsPerUnit = 66,
+            FatPerUnit = 7
+        });
+        var food = await foodResponse.Content.ReadFromJsonAsync<FoodResponse>();
+        Assert.False(food!.IsFavorite);
+
+        var favoriteResponse = await client.PutAsJsonAsync($"/api/foods/{food.Id}/favorite", new SetFoodFavoriteRequest
+        {
+            IsFavorite = true
+        });
+        Assert.Equal(HttpStatusCode.NoContent, favoriteResponse.StatusCode);
+
+        var getResponse = await client.GetAsync($"/api/foods/{food.Id}");
+        var updated = await getResponse.Content.ReadFromJsonAsync<FoodResponse>();
+        Assert.True(updated!.IsFavorite);
+    }
 }
