@@ -70,9 +70,9 @@ else if (plan is not null)
             <label for="exercise" class="form-label">Exercise</label>
             <InputSelect id="exercise" class="form-select" @bind-Value="addExerciseFormModel.ExerciseId">
                 <option value="0">-- select --</option>
-                @foreach (var exercise in exerciseCatalog)
+                @foreach (var exercise in ExerciseCatalogForPicker)
                 {
-                    <option value="@exercise.Id">@exercise.Name</option>
+                    <option value="@exercise.Id">@(exercise.IsFavorite ? "★ " : "")@exercise.Name</option>
                 }
             </InputSelect>
         </div>
@@ -153,6 +153,11 @@ else if (plan is not null)
 
     private string ExerciseName(int exerciseId) =>
         exerciseCatalog.FirstOrDefault(e => e.Id == exerciseId)?.Name ?? $"#{exerciseId}";
+
+    /// Favorites first (same ordering as the Exercises catalog page) so the picker surfaces
+    /// a user's go-to exercises instead of making them scroll the full catalog every time.
+    private IEnumerable<ExerciseResponse> ExerciseCatalogForPicker =>
+        exerciseCatalog.OrderByDescending(e => e.IsFavorite).ThenBy(e => e.Name);
 
     private async Task HandleRenameAsync()
     {

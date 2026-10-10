@@ -77,9 +77,9 @@ else if (plan is not null)
             <label for="food" class="form-label">Food</label>
             <InputSelect id="food" class="form-select" @bind-Value="addEntryFormModel.FoodId">
                 <option value="0">-- select --</option>
-                @foreach (var food in foodCatalog)
+                @foreach (var food in FoodCatalogForPicker)
                 {
-                    <option value="@food.Id">@food.Name</option>
+                    <option value="@food.Id">@(food.IsFavorite ? "★ " : "")@food.Name</option>
                 }
             </InputSelect>
         </div>
@@ -170,6 +170,11 @@ else if (plan is not null)
 
     private string FoodName(int foodId) =>
         foodCatalog.FirstOrDefault(f => f.Id == foodId)?.Name ?? $"#{foodId}";
+
+    /// Favorites first (same ordering as the Foods catalog page) so the picker surfaces a
+    /// user's go-to foods instead of making them scroll the full catalog every time.
+    private IEnumerable<FoodResponse> FoodCatalogForPicker =>
+        foodCatalog.OrderByDescending(f => f.IsFavorite).ThenBy(f => f.Name);
 
     private MacroTotals PlanTotals =>
         plan is null
