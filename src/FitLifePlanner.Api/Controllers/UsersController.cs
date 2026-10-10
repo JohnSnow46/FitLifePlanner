@@ -118,4 +118,24 @@ public class UsersController(
 
         return NoContent();
     }
+
+    [HttpPut("users/me/password")]
+    public async Task<IActionResult> ChangePasswordAsync(ChangePasswordRequest request)
+    {
+        var userId = User.GetUserId();
+
+        var user = await context.Users.FindAsync(userId)
+            ?? throw new NotFoundException("User", userId);
+
+        if (passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword) == PasswordVerificationResult.Failed)
+        {
+            throw new ValidationException("Current password is incorrect.");
+        }
+
+        user.PasswordHash = passwordHasher.HashPassword(user, request.NewPassword);
+
+        await context.SaveChangesAsync();
+
+        return NoContent();
+    }
 }

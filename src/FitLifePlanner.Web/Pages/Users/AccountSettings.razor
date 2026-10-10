@@ -1,0 +1,79 @@
+@page "/account"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.ComponentModel.DataAnnotations
+@using FitLifePlanner.Web.Contracts.Users
+@using FitLifePlanner.Web.Services
+@inject UsersApiClient UsersApiClient
+
+<PageTitle>Account settings</PageTitle>
+
+<h1>Account settings</h1>
+
+<ErrorAlert Message="@errorMessage" />
+
+@if (successMessage is not null)
+{
+    <div class="alert alert-success" role="alert">@successMessage</div>
+}
+
+<h2>Change password</h2>
+
+<EditForm Model="formModel" OnValidSubmit="HandleSubmitAsync">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label for="currentPassword" class="form-label">Current password</label>
+        <InputText id="currentPassword" type="password" class="form-control" @bind-Value="formModel.CurrentPassword" />
+    </div>
+
+    <div class="mb-3">
+        <label for="newPassword" class="form-label">New password</label>
+        <InputText id="newPassword" type="password" class="form-control" @bind-Value="formModel.NewPassword" />
+    </div>
+
+    <button type="submit" class="btn btn-primary" disabled="@isSaving">Change password</button>
+</EditForm>
+
+@code {
+    private readonly ChangePasswordFormModel formModel = new();
+    private bool isSaving;
+    private string? errorMessage;
+    private string? successMessage;
+
+    private async Task HandleSubmitAsync()
+    {
+        isSaving = true;
+        errorMessage = null;
+        successMessage = null;
+        try
+        {
+            await UsersApiClient.ChangePasswordAsync(new ChangePasswordRequest
+            {
+                CurrentPassword = formModel.CurrentPassword,
+                NewPassword = formModel.NewPassword
+            });
+            formModel.CurrentPassword = string.Empty;
+            formModel.NewPassword = string.Empty;
+            successMessage = "Password changed.";
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private sealed class ChangePasswordFormModel
+    {
+        [Required]
+        public string CurrentPassword { get; set; } = string.Empty;
+
+        [Required]
+        [MinLength(8)]
+        public string NewPassword { get; set; } = string.Empty;
+    }
+}

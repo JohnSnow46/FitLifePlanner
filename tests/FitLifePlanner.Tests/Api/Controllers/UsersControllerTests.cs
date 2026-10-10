@@ -279,4 +279,76 @@ public class UsersControllerTests(TestApiFactory factory) : IClassFixture<TestAp
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
+
+    [Fact]
+    public async Task ChangePassword_with_correct_current_password_allows_login_with_the_new_one()
+    {
+        var client = factory.CreateClient();
+        var email = $"{Guid.NewGuid()}@example.com";
+        var registerResponse = await client.PostAsJsonAsync("/api/auth/register", new UserRegisterRequest
+        {
+            Name = "Jan Kowalski",
+            Email = email,
+            Password = "correct-horse-battery"
+        });
+        var registerBody = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", registerBody!.Token);
+
+        var response = await client.PutAsJsonAsync("/api/users/me/password", new ChangePasswordRequest
+        {
+            CurrentPassword = "correct-horse-battery",
+            NewPassword = "new-correct-horse-battery"
+        });
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var loginResponse = await factory.CreateClient().PostAsJsonAsync("/api/auth/login", new UserLoginRequest
+        {
+            Email = email,
+            Password = "new-correct-horse-battery"
+        });
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task ChangePassword_with_wrong_current_password_returns_bad_request()
+    {
+        var client = await CreateAuthenticatedClientAsync();
+
+        var response = await client.PutAsJsonAsync("/api/users/me/password", new ChangePasswordRequest
+        {
+            CurrentPassword = "not-the-real-password",
+            NewPassword = "new-correct-horse-battery"
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ChangePassword_with_too_short_new_password_returns_bad_request()
+    {
+        var client = await CreateAuthenticatedClientAsync();
+
+        var response = await client.PutAsJsonAsync("/api/users/me/password", new ChangePasswordRequest
+        {
+            CurrentPassword = "correct-horse-battery",
+            NewPassword = "short"
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ChangePassword_without_token_returns_unauthorized()
+    {
+        var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync("/api/users/me/password", new ChangePasswordRequest
+        {
+            CurrentPassword = "correct-horse-battery",
+            NewPassword = "new-correct-horse-battery"
+        });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 }
