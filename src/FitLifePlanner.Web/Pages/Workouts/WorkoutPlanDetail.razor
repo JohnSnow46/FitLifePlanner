@@ -58,6 +58,15 @@ else if (plan is not null)
                 </tr>
             }
         </tbody>
+        @if (plan.Exercises.Count > 0)
+        {
+            <tfoot>
+                <tr class="fw-bold">
+                    <td colspan="4">Plan totals</td>
+                    <td colspan="2">@FormatVolume(PlanTotalVolume)</td>
+                </tr>
+            </tfoot>
+        }
     </table>
 
     <h3>Add exercise</h3>
@@ -96,6 +105,11 @@ else if (plan is not null)
             <label for="targetWeight" class="form-label">Target weight</label>
             <InputNumber id="targetWeight" class="form-control" @bind-Value="addExerciseFormModel.TargetWeight" />
         </div>
+
+        @if (PendingExerciseVolume is { } pendingVolume)
+        {
+            <p class="text-muted">This exercise adds: @FormatVolume(pendingVolume)</p>
+        }
 
         <button type="submit" class="btn btn-primary">Add exercise</button>
     </EditForm>
@@ -158,6 +172,21 @@ else if (plan is not null)
     /// a user's go-to exercises instead of making them scroll the full catalog every time.
     private IEnumerable<ExerciseResponse> ExerciseCatalogForPicker =>
         exerciseCatalog.OrderByDescending(e => e.IsFavorite).ThenBy(e => e.Name);
+
+    /// Same "sets x reps x weight, summed" formula as WorkoutLogResponse.TotalVolume
+    /// (ProgressMappings.TotalVolume) -- here applied to planned targets instead of
+    /// completed sets, so a plan under construction gets the same at-a-glance total.
+    private decimal PlanTotalVolume =>
+        plan is null
+            ? 0
+            : plan.Exercises.Sum(e => e.TargetSets * e.TargetReps * e.TargetWeight);
+
+    private decimal? PendingExerciseVolume =>
+        addExerciseFormModel.ExerciseId <= 0
+            ? null
+            : addExerciseFormModel.TargetSets * addExerciseFormModel.TargetReps * addExerciseFormModel.TargetWeight;
+
+    private static string FormatVolume(decimal volume) => $"{volume:0.#} total volume (sets × reps × weight)";
 
     private async Task HandleRenameAsync()
     {
