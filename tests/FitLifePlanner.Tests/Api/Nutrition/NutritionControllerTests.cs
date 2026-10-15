@@ -117,6 +117,70 @@ public class NutritionControllerTests(TestApiFactory factory) : IClassFixture<Te
     }
 
     [Fact]
+    public async Task DuplicateMealPlan_copies_name_and_all_entries_into_a_new_plan()
+    {
+        var client = await CreateAuthenticatedClientAsync();
+
+        var planResponse = await client.PostAsJsonAsync("/api/meal-plans", new CreateMealPlanRequest
+        {
+            Name = "Cutting Week"
+        });
+        var plan = await planResponse.Content.ReadFromJsonAsync<MealPlanResponse>();
+
+        var foodResponse = await client.PostAsJsonAsync("/api/foods", new CreateFoodRequest
+        {
+            Name = "Greek Yogurt",
+            Unit = "g",
+            CaloriesPerUnit = 0.59m,
+            ProteinPerUnit = 0.1m,
+            CarbsPerUnit = 0.036m,
+            FatPerUnit = 0.004m
+        });
+        var food = await foodResponse.Content.ReadFromJsonAsync<FoodResponse>();
+
+        await client.PostAsJsonAsync($"/api/meal-plans/{plan!.Id}/entries", new AddMealPlanEntryRequest
+        {
+            FoodId = food!.Id,
+            MealType = MealType.Breakfast,
+            Quantity = 250m,
+            DayOfWeek = DayOfWeek.Wednesday
+        });
+
+        var duplicateResponse = await client.PostAsync($"/api/meal-plans/{plan.Id}/duplicate", null);
+
+        Assert.Equal(HttpStatusCode.Created, duplicateResponse.StatusCode);
+        var copy = await duplicateResponse.Content.ReadFromJsonAsync<MealPlanResponse>();
+
+        Assert.NotEqual(plan.Id, copy!.Id);
+        Assert.Equal("Cutting Week (Copy)", copy.Name);
+
+        var copyDetailResponse = await client.GetAsync($"/api/meal-plans/{copy.Id}");
+        var copyDetail = await copyDetailResponse.Content.ReadFromJsonAsync<MealPlanDetailResponse>(JsonOptions);
+
+        var copiedEntry = Assert.Single(copyDetail!.Entries);
+        Assert.Equal(food.Id, copiedEntry.FoodId);
+        Assert.Equal(MealType.Breakfast, copiedEntry.MealType);
+        Assert.Equal(250m, copiedEntry.Quantity);
+        Assert.Equal(DayOfWeek.Wednesday, copiedEntry.DayOfWeek);
+    }
+
+    [Fact]
+    public async Task DuplicateMealPlan_owned_by_other_user_returns_not_found()
+    {
+        var ownerClient = await CreateAuthenticatedClientAsync();
+        var planResponse = await ownerClient.PostAsJsonAsync("/api/meal-plans", new CreateMealPlanRequest
+        {
+            Name = "Owner's Plan"
+        });
+        var plan = await planResponse.Content.ReadFromJsonAsync<MealPlanResponse>();
+
+        var otherClient = await CreateAuthenticatedClientAsync();
+        var response = await otherClient.PostAsync($"/api/meal-plans/{plan!.Id}/duplicate", null);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public async Task AddEntry_with_non_positive_quantity_returns_bad_request()
     {
         var client = await CreateAuthenticatedClientAsync();

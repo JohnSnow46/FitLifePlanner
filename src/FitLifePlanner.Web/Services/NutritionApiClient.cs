@@ -78,6 +78,12 @@ public class NutritionApiClient(HttpClient httpClient)
         await EnsureSuccessAsync(response, cancellationToken);
     }
 
+    public async Task<MealPlanResponse> DuplicateMealPlanAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var response = await httpClient.PostAsync($"api/meal-plans/{id}/duplicate", null, cancellationToken);
+        return await ReadResponseAsync<MealPlanResponse>(response, cancellationToken);
+    }
+
     public async Task<MealPlanEntryResponse> AddMealPlanEntryAsync(int planId, AddMealPlanEntryRequest request, CancellationToken cancellationToken = default)
     {
         var response = await httpClient.PostAsJsonAsync($"api/meal-plans/{planId}/entries", request, JsonOptions, cancellationToken);

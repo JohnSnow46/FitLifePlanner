@@ -149,6 +149,34 @@ public class NutritionController(FitLifePlannerDbContext context) : ControllerBa
         return NoContent();
     }
 
+    [HttpPost("meal-plans/{id:int}/duplicate")]
+    public async Task<ActionResult<MealPlanResponse>> DuplicateMealPlanAsync(int id)
+    {
+        var userId = User.GetUserId();
+
+        var source = await context.MealPlans
+            .Include(p => p.Entries)
+            .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId)
+            ?? throw new NotFoundException("MealPlan", id);
+
+        var copy = new MealPlan
+        {
+            UserId = userId,
+            Name = $"{source.Name} (Copy)"
+        };
+
+        context.MealPlans.Add(copy);
+
+        foreach (var entry in source.Entries)
+        {
+            copy.AddEntry(entry.FoodId, entry.MealType, entry.Quantity, entry.DayOfWeek);
+        }
+
+        await context.SaveChangesAsync();
+
+        return Created($"/api/meal-plans/{copy.Id}", copy.ToResponse());
+    }
+
     [HttpDelete("meal-plans/{id:int}")]
     public async Task<IActionResult> DeleteMealPlanAsync(int id)
     {
