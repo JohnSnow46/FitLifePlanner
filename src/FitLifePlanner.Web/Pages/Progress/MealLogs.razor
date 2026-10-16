@@ -147,9 +147,9 @@ else
             <label for="foodId" class="form-label">Food</label>
             <InputSelect id="foodId" class="form-select" @bind-Value="formModel.FoodId">
                 <option value="0">-- select --</option>
-                @foreach (var food in foodCatalog)
+                @foreach (var food in FoodCatalogForPicker)
                 {
-                    <option value="@food.Id">@food.Name</option>
+                    <option value="@food.Id">@(food.IsFavorite ? "★ " : "")@food.Name</option>
                 }
             </InputSelect>
         </div>
@@ -247,6 +247,11 @@ else
 
     private string FoodName(int foodId) =>
         foodCatalog.FirstOrDefault(f => f.Id == foodId)?.Name ?? $"#{foodId}";
+
+    /// Favorites first (same ordering as the Foods catalog page and MealPlanDetail's own
+    /// food picker) so this picker surfaces a user's go-to foods too.
+    private IEnumerable<FoodResponse> FoodCatalogForPicker =>
+        foodCatalog.OrderByDescending(f => f.IsFavorite).ThenBy(f => f.Name);
 
     private async Task HandleSubmitAsync()
     {
