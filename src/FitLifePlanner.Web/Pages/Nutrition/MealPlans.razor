@@ -22,6 +22,7 @@ else
             <tr>
                 <th>Name</th>
                 <th></th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -30,6 +31,7 @@ else
                 <tr>
                     <td>@plan.Name</td>
                     <td><a href="/meal-plans/@plan.Id">Details</a></td>
+                    <td><button type="button" class="btn btn-link p-0" @onclick="() => DuplicateAsync(plan.Id)">Duplicate</button></td>
                 </tr>
             }
         </tbody>
@@ -76,6 +78,20 @@ else
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private async Task DuplicateAsync(int id)
+    {
+        errorMessage = null;
+        try
+        {
+            await NutritionApiClient.DuplicateMealPlanAsync(id);
+            await LoadPlansAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
         }
     }
 

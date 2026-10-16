@@ -5,7 +5,7 @@ namespace FitLifePlanner.Api.Contracts.Nutrition;
 public static class NutritionMappings
 {
     public static FoodResponse ToResponse(this Food food) =>
-        new(food.Id, food.Name, food.Unit, food.CaloriesPerUnit, food.ProteinPerUnit, food.CarbsPerUnit, food.FatPerUnit);
+        new(food.Id, food.Name, food.Unit, food.CaloriesPerUnit, food.ProteinPerUnit, food.CarbsPerUnit, food.FatPerUnit, food.IsFavorite);
 
     public static MealPlanResponse ToResponse(this MealPlan plan) =>
         new(plan.Id, plan.Name);

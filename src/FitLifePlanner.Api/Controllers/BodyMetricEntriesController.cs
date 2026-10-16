@@ -1,3 +1,4 @@
+using System.Text;
 using FitLifePlanner.Api.Common;
 using FitLifePlanner.Api.Contracts.Progress;
 using FitLifePlanner.Domain.Common;
@@ -32,6 +33,37 @@ public class BodyMetricEntriesController(FitLifePlannerDbContext context) : Cont
         var entries = await query.ToListAsync();
 
         return Ok(entries.Select(e => e.ToResponse()).ToList());
+    }
+
+    [HttpGet("body-metrics/export")]
+    public async Task<IActionResult> ExportBodyMetricEntriesAsync([FromQuery] DateTime? from, [FromQuery] DateTime? to)
+    {
+        var userId = User.GetUserId();
+
+        var query = context.BodyMetricEntries.Where(e => e.UserId == userId);
+
+        if (from is not null)
+        {
+            query = query.Where(e => e.Date >= from);
+        }
+
+        if (to is not null)
+        {
+            query = query.Where(e => e.Date <= to);
+        }
+
+        var entries = await query.OrderBy(e => e.Date).ToListAsync();
+
+        var rows = entries.Select(e => (IReadOnlyList<string>)new[]
+        {
+            e.Date.ToString("yyyy-MM-dd"),
+            e.Weight.ToString("0.##"),
+            e.BodyFatPercent?.ToString("0.##") ?? "",
+            e.Notes
+        });
+
+        var csv = CsvExport.ToCsv(["Date", "Weight", "BodyFatPercent", "Notes"], rows);
+        return File(Encoding.UTF8.GetBytes(csv), "text/csv", "body-metrics.csv");
     }
 
     [HttpGet("body-metrics/{id:int}")]

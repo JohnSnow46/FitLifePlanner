@@ -11,12 +11,9 @@
 
 <ErrorAlert Message="@errorMessage" />
 
-<div class="mb-3 d-flex align-items-end gap-2">
-    <div>
-        <label for="muscleGroupFilter" class="form-label">Muscle group</label>
-        <input id="muscleGroupFilter" class="form-control" @bind="muscleGroupFilter" @bind:event="oninput" />
-    </div>
-    <button type="button" class="btn btn-secondary" @onclick="LoadExercisesAsync">Filter</button>
+<div class="mb-3">
+    <label for="muscleGroupFilter" class="form-label">Filter by muscle group</label>
+    <input id="muscleGroupFilter" class="form-control" @bind="muscleGroupFilter" @bind:event="oninput" />
 </div>
 
 @if (isLoading)
@@ -28,6 +25,7 @@ else
     <table class="table">
         <thead>
             <tr>
+                <th></th>
                 <th>Name</th>
                 <th>Muscle group</th>
                 <th>Description</th>
@@ -35,9 +33,14 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var exercise in exercises)
+            @foreach (var exercise in VisibleExercises)
             {
                 <tr>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-link p-0" aria-label="@(exercise.IsFavorite ? "Remove from favorites" : "Mark as favorite")" aria-pressed="@exercise.IsFavorite" @onclick="() => ToggleFavoriteAsync(exercise)">
+                            <span aria-hidden="true">@(exercise.IsFavorite ? "★" : "☆")</span>
+                        </button>
+                    </td>
                     <td>@exercise.Name</td>
                     <td>@exercise.MuscleGroup</td>
                     <td>@exercise.Description</td>
@@ -87,6 +90,13 @@ else
     private bool isLoading;
     private string? errorMessage;
 
+    private IEnumerable<ExerciseResponse> VisibleExercises =>
+        (string.IsNullOrWhiteSpace(muscleGroupFilter)
+            ? exercises
+            : exercises.Where(e => e.MuscleGroup.Contains(muscleGroupFilter.Trim(), StringComparison.OrdinalIgnoreCase)))
+        .OrderByDescending(e => e.IsFavorite)
+        .ThenBy(e => e.Name);
+
     protected override async Task OnInitializedAsync()
     {
         await LoadExercisesAsync();
@@ -98,7 +108,7 @@ else
         errorMessage = null;
         try
         {
-            exercises = await WorkoutsApiClient.GetExercisesAsync(muscleGroupFilter);
+            exercises = await WorkoutsApiClient.GetExercisesAsync();
         }
         catch (ApiException ex)
         {
@@ -151,6 +161,20 @@ else
             }
 
             CancelEdit();
+            await LoadExercisesAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task ToggleFavoriteAsync(ExerciseResponse exercise)
+    {
+        errorMessage = null;
+        try
+        {
+            await WorkoutsApiClient.SetExerciseFavoriteAsync(exercise.Id, !exercise.IsFavorite);
             await LoadExercisesAsync();
         }
         catch (ApiException ex)

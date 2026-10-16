@@ -21,6 +21,11 @@ public class WorkoutLog
             throw new ValidationException("Date cannot be in the future.");
         }
 
+        if (notes.Length > 2000)
+        {
+            throw new ValidationException("Notes must not exceed 2000 characters.");
+        }
+
         return new WorkoutLog
         {
             UserId = userId,
