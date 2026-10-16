@@ -60,9 +60,9 @@ else if (log is not null)
             <label for="exercise" class="form-label">Exercise</label>
             <InputSelect id="exercise" class="form-select" @bind-Value="addEntryFormModel.ExerciseId">
                 <option value="0">-- select --</option>
-                @foreach (var exercise in exerciseCatalog)
+                @foreach (var exercise in ExerciseCatalogForPicker)
                 {
-                    <option value="@exercise.Id">@exercise.Name</option>
+                    <option value="@exercise.Id">@(exercise.IsFavorite ? "★ " : "")@exercise.Name</option>
                 }
             </InputSelect>
         </div>
@@ -143,6 +143,11 @@ else if (log is not null)
 
     private string ExerciseName(int exerciseId) =>
         exerciseCatalog.FirstOrDefault(e => e.Id == exerciseId)?.Name ?? $"#{exerciseId}";
+
+    /// Favorites first (same ordering as the Exercises catalog page and WorkoutPlanDetail's
+    /// own exercise picker) so this picker surfaces a user's go-to exercises too.
+    private IEnumerable<ExerciseResponse> ExerciseCatalogForPicker =>
+        exerciseCatalog.OrderByDescending(e => e.IsFavorite).ThenBy(e => e.Name);
 
     private async Task HandleAddEntryAsync()
     {
