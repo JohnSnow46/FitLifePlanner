@@ -11,6 +11,11 @@
 
 <ErrorAlert Message="@errorMessage" />
 
+<div class="mb-3">
+    <label for="nameFilter" class="form-label">Filter by name</label>
+    <input id="nameFilter" class="form-control" @bind="nameFilter" @bind:event="oninput" />
+</div>
+
 @if (isLoading)
 {
     <LoadingIndicator />
@@ -100,13 +105,18 @@ else
 
 @code {
     private IReadOnlyCollection<FoodResponse> foods = [];
+    private string? nameFilter;
     private int? editingId;
     private readonly FoodFormModel formModel = new();
     private bool isLoading;
     private string? errorMessage;
 
     private IEnumerable<FoodResponse> VisibleFoods =>
-        foods.OrderByDescending(f => f.IsFavorite).ThenBy(f => f.Name);
+        (string.IsNullOrWhiteSpace(nameFilter)
+            ? foods
+            : foods.Where(f => f.Name.Contains(nameFilter.Trim(), StringComparison.OrdinalIgnoreCase)))
+        .OrderByDescending(f => f.IsFavorite)
+        .ThenBy(f => f.Name);
 
     protected override async Task OnInitializedAsync()
     {
