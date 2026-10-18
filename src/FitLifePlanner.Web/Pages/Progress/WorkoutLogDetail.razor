@@ -48,6 +48,15 @@ else if (log is not null)
                 </tr>
             }
         </tbody>
+        @if (log.Entries.Count > 0)
+        {
+            <tfoot>
+                <tr class="fw-bold">
+                    <td colspan="3">Log totals</td>
+                    <td colspan="2">@FormatVolume(LogTotalVolume)</td>
+                </tr>
+            </tfoot>
+        }
     </table>
 
     <h3>Add entry</h3>
@@ -148,6 +157,17 @@ else if (log is not null)
     /// own exercise picker) so this picker surfaces a user's go-to exercises too.
     private IEnumerable<ExerciseResponse> ExerciseCatalogForPicker =>
         exerciseCatalog.OrderByDescending(e => e.IsFavorite).ThenBy(e => e.Name);
+
+    /// Same "sets x reps x weight, summed" formula as ProgressMappings.TotalVolume
+    /// (WorkoutLogResponse, used by the Workout Logs list/trend chart) and as
+    /// WorkoutPlanDetail's own PlanTotalVolume (over targets instead of completed sets) --
+    /// WorkoutLogDetail never showed the same total for the entries it's actually editing.
+    private decimal LogTotalVolume =>
+        log is null
+            ? 0
+            : log.Entries.Sum(e => e.SetsCompleted * e.RepsCompleted * e.WeightUsed);
+
+    private static string FormatVolume(decimal volume) => $"{volume:0.#} total volume (sets × reps × weight)";
 
     private async Task HandleAddEntryAsync()
     {
