@@ -159,6 +159,11 @@ else
             <InputNumber id="quantityConsumed" class="form-control" @bind-Value="formModel.QuantityConsumed" />
         </div>
 
+        @if (PendingEntryMacros is { } pendingMacros)
+        {
+            <p class="text-muted">This entry adds: @FormatMacros(pendingMacros)</p>
+        }
+
         <button type="submit" class="btn btn-primary">Create</button>
     </EditForm>
 }
@@ -252,6 +257,31 @@ else
     /// food picker) so this picker surfaces a user's go-to foods too.
     private IEnumerable<FoodResponse> FoodCatalogForPicker =>
         foodCatalog.OrderByDescending(f => f.IsFavorite).ThenBy(f => f.Name);
+
+    /// Same "this entry adds: ..." live preview MealPlanDetail already has while building a
+    /// meal plan, over the same Food fields -- MealLogs never got it for the entry actually
+    /// being logged.
+    private MacroTotals? PendingEntryMacros =>
+        formModel.FoodId <= 0 || formModel.QuantityConsumed <= 0
+            ? null
+            : MacrosFor(formModel.FoodId, formModel.QuantityConsumed);
+
+    private MacroTotals MacrosFor(int foodId, decimal quantity)
+    {
+        var food = foodCatalog.FirstOrDefault(f => f.Id == foodId);
+        return food is null
+            ? new MacroTotals(0, 0, 0, 0)
+            : new MacroTotals(
+                food.CaloriesPerUnit * quantity,
+                food.ProteinPerUnit * quantity,
+                food.CarbsPerUnit * quantity,
+                food.FatPerUnit * quantity);
+    }
+
+    private static string FormatMacros(MacroTotals macros) =>
+        $"{macros.Calories:0.#} kcal, {macros.Protein:0.#} g protein, {macros.Carbs:0.#} g carbs, {macros.Fat:0.#} g fat";
+
+    private readonly record struct MacroTotals(decimal Calories, decimal Protein, decimal Carbs, decimal Fat);
 
     private async Task HandleSubmitAsync()
     {
