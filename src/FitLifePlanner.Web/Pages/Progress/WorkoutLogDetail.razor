@@ -91,6 +91,11 @@ else if (log is not null)
             <InputNumber id="weightUsed" class="form-control" @bind-Value="addEntryFormModel.WeightUsed" />
         </div>
 
+        @if (PendingEntryVolume is { } pendingVolume)
+        {
+            <p class="text-muted">This entry adds: @FormatVolume(pendingVolume)</p>
+        }
+
         <button type="submit" class="btn btn-primary">Add entry</button>
     </EditForm>
 
@@ -166,6 +171,13 @@ else if (log is not null)
         log is null
             ? 0
             : log.Entries.Sum(e => e.SetsCompleted * e.RepsCompleted * e.WeightUsed);
+
+    /// Same "this exercise adds: ..." live preview WorkoutPlanDetail already has while
+    /// building a plan, over the entry actually being logged instead of a planned target.
+    private decimal? PendingEntryVolume =>
+        addEntryFormModel.ExerciseId <= 0 || addEntryFormModel.SetsCompleted <= 0 || addEntryFormModel.RepsCompleted <= 0
+            ? null
+            : addEntryFormModel.SetsCompleted * addEntryFormModel.RepsCompleted * addEntryFormModel.WeightUsed;
 
     private static string FormatVolume(decimal volume) => $"{volume:0.#} total volume (sets × reps × weight)";
 
