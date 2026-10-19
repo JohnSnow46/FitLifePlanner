@@ -207,6 +207,7 @@ else
         [Required]
         public DateTime Date { get; set; } = DateTime.Today;
 
+        [MaxLength(2000)]
         public string Notes { get; set; } = string.Empty;
 
         public int WorkoutPlanId { get; set; }

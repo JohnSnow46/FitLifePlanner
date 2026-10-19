@@ -263,8 +263,10 @@ else
         [Range(0.01, double.MaxValue)]
         public decimal Weight { get; set; }
 
+        [Range(0, 100)]
         public decimal? BodyFatPercent { get; set; }
 
+        [MaxLength(2000)]
         public string Notes { get; set; } = string.Empty;
     }
 
