@@ -71,6 +71,8 @@ else
             }
         </tbody>
     </table>
+
+    <TrendChart Points="@CalorieTrendPoints" Label="Calories" />
 }
 
 <div class="row mb-3">
@@ -249,6 +251,12 @@ else
             errorMessage = ex.Message;
         }
     }
+
+    /// Same TrendChart WorkoutLogs (volume) and BodyMetrics (weight) already show -- MealLogs
+    /// was the one Progress page without a trend, even though the weekly summary above it
+    /// already has one calorie total per day.
+    private IReadOnlyList<TrendChart.TrendPoint> CalorieTrendPoints =>
+        weeklySummary.Select(d => new TrendChart.TrendPoint(d.Date, d.Calories)).ToList();
 
     private string FoodName(int foodId) =>
         foodCatalog.FirstOrDefault(f => f.Id == foodId)?.Name ?? $"#{foodId}";
