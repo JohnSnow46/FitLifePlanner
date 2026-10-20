@@ -101,7 +101,13 @@
                         <ul class="list-group mb-2">
                             @foreach (var log in recentWorkoutLogs)
                             {
-                                <li class="list-group-item">@log.Date.ToLocalTime().ToString("d") &mdash; @log.Notes</li>
+                                <li class="list-group-item">
+                                    @log.Date.ToLocalTime().ToString("d") &mdash; volume @log.TotalVolume.ToString("0.##")
+                                    @if (!string.IsNullOrWhiteSpace(log.Notes))
+                                    {
+                                        <text> &middot; @log.Notes</text>
+                                    }
+                                </li>
                             }
                         </ul>
                     }
@@ -118,7 +124,7 @@
                         <ul class="list-group mb-2">
                             @foreach (var log in recentMealLogs)
                             {
-                                <li class="list-group-item">@log.Date.ToLocalTime().ToString("d") &mdash; @log.MealType, qty @log.QuantityConsumed</li>
+                                <li class="list-group-item">@log.Date.ToLocalTime().ToString("d") &mdash; @log.MealType: @FoodName(log.FoodId), qty @log.QuantityConsumed</li>
                             }
                         </ul>
                     }
@@ -148,6 +154,7 @@
     private BodyMetricEntryResponse? latestBodyMetric;
     private IReadOnlyCollection<WorkoutLogResponse> recentWorkoutLogs = [];
     private IReadOnlyCollection<MealLogResponse> recentMealLogs = [];
+    private IReadOnlyCollection<FoodResponse> foodCatalog = [];
     private bool loggedWorkoutToday;
     private bool loggedMealToday;
 
@@ -155,6 +162,11 @@
     {
         await LoadDashboardAsync();
     }
+
+    /// Same lookup + "#id" fallback MealLogs uses -- the recent-meals list used to show only
+    /// "Breakfast, qty 2", with no way to tell what was actually eaten.
+    private string FoodName(int foodId) =>
+        foodCatalog.FirstOrDefault(f => f.Id == foodId)?.Name ?? $"#{foodId}";
 
     private async Task LoadDashboardAsync()
     {
@@ -170,11 +182,13 @@
             var workoutLogsTask = ProgressApiClient.GetWorkoutLogsAsync(from: logsFrom);
             var mealLogsTask = ProgressApiClient.GetMealLogsAsync(from: logsFrom);
             var bodyMetricsTask = ProgressApiClient.GetBodyMetricEntriesAsync(from: metricsFrom);
+            var foodsTask = NutritionApiClient.GetFoodsAsync();
 
-            await Task.WhenAll(workoutPlansTask, mealPlansTask, workoutLogsTask, mealLogsTask, bodyMetricsTask);
+            await Task.WhenAll(workoutPlansTask, mealPlansTask, workoutLogsTask, mealLogsTask, bodyMetricsTask, foodsTask);
 
             workoutPlanCount = workoutPlansTask.Result.Count;
             mealPlanCount = mealPlansTask.Result.Count;
+            foodCatalog = foodsTask.Result;
             recentWorkoutLogs = workoutLogsTask.Result.OrderByDescending(log => log.Date).Take(5).ToList();
             recentMealLogs = mealLogsTask.Result.OrderByDescending(log => log.Date).Take(5).ToList();
             latestBodyMetric = bodyMetricsTask.Result.OrderByDescending(entry => entry.Date).FirstOrDefault();
