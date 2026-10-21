@@ -94,6 +94,10 @@ else
 {
     <h2>Trend</h2>
     <TrendChart Points="@WeightTrendPoints" Label="Weight" />
+    @if (BodyFatTrendPoints.Count > 0)
+    {
+        <TrendChart Points="@BodyFatTrendPoints" Label="Body fat %" />
+    }
 
     <table class="table">
         <thead>
@@ -170,6 +174,15 @@ else
 
     private IReadOnlyList<TrendChart.TrendPoint> WeightTrendPoints =>
         entries.Select(e => new TrendChart.TrendPoint(e.Date, e.Weight)).ToList();
+
+    /// Only entries that recorded body fat -- an entry without it isn't a 0% data point.
+    /// Hidden entirely when no entry has body fat, so users who never track it don't get a
+    /// second "not enough data" placeholder under the weight chart.
+    private IReadOnlyList<TrendChart.TrendPoint> BodyFatTrendPoints =>
+        entries
+            .Where(e => e.BodyFatPercent is not null)
+            .Select(e => new TrendChart.TrendPoint(e.Date, e.BodyFatPercent!.Value))
+            .ToList();
 
     protected override async Task OnInitializedAsync()
     {
