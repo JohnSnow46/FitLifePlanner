@@ -51,6 +51,24 @@
     </p>
 }
 
+@* Same progress line for the body-fat goal -- TargetBodyFatPercent has been saved by the goal
+   form since it was added, but only the weight goal was ever compared against an entry. *@
+@if (latestBodyFatEntry?.BodyFatPercent is decimal latestBodyFat && goalsFormModel.TargetBodyFatPercent is decimal targetBodyFat)
+{
+    var remainingBodyFat = latestBodyFat - targetBodyFat;
+    <p>
+        Latest body fat @latestBodyFat%, target @targetBodyFat% —
+        @if (remainingBodyFat == 0)
+        {
+            <strong>goal reached.</strong>
+        }
+        else
+        {
+            <strong>@Math.Abs(remainingBodyFat).ToString("0.##") percentage points @(remainingBodyFat > 0 ? "to lose" : "to gain").</strong>
+        }
+    </p>
+}
+
 <div class="row mb-3">
     <div class="col-auto">
         <label for="from" class="form-label">From</label>
@@ -141,6 +159,11 @@ else
     private DateTime? toFilter;
     private bool isLoading;
     private string? errorMessage;
+
+    /// Not every entry records body fat, so the body-fat goal compares against the latest entry
+    /// that has it rather than latestEntry.
+    private BodyMetricEntryResponse? latestBodyFatEntry =>
+        entries.Where(e => e.BodyFatPercent is not null).MaxBy(e => e.Date);
 
     private BodyMetricEntryResponse? latestEntry =>
         entries.OrderByDescending(e => e.Date).FirstOrDefault();
