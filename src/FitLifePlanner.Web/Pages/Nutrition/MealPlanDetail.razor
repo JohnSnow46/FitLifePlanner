@@ -49,7 +49,7 @@ else if (plan is not null)
                     <td>@FoodName(entry.FoodId)</td>
                     <td>@entry.MealType</td>
                     <td>@entry.DayOfWeek</td>
-                    <td>@entry.Quantity</td>
+                    <td>@entry.Quantity @FoodUnit(entry.FoodId)</td>
                     <td>
                         <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveEntryAsync(entry.Id)">Remove</button>
                     </td>
@@ -105,7 +105,7 @@ else if (plan is not null)
         </div>
 
         <div class="mb-3">
-            <label for="quantity" class="form-label">Quantity</label>
+            <label for="quantity" class="form-label">Quantity@(FoodUnit(addEntryFormModel.FoodId) is { Length: > 0 } unit ? $" ({unit})" : "")</label>
             <InputNumber id="quantity" class="form-control" @bind-Value="addEntryFormModel.Quantity" />
         </div>
 
@@ -167,6 +167,11 @@ else if (plan is not null)
             isLoading = false;
         }
     }
+
+    /// Same unit suffix MealLogs shows -- "2" in a plan entry could otherwise mean 2 g or
+    /// 2 servings. Empty when the food is no longer in the catalog.
+    private string FoodUnit(int foodId) =>
+        foodCatalog.FirstOrDefault(f => f.Id == foodId)?.Unit ?? string.Empty;
 
     private string FoodName(int foodId) =>
         foodCatalog.FirstOrDefault(f => f.Id == foodId)?.Name ?? $"#{foodId}";
