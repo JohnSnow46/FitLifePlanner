@@ -116,7 +116,7 @@ else
                     <td>@mealLog.Date.ToLocalTime().ToString("d")</td>
                     <td>@mealLog.MealType</td>
                     <td>@FoodName(mealLog.FoodId)</td>
-                    <td>@mealLog.QuantityConsumed</td>
+                    <td>@mealLog.QuantityConsumed @FoodUnit(mealLog.FoodId)</td>
                     <td>@RowCalories(mealLog)</td>
                     <td>
                         <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteMealLogAsync(mealLog.Id)">Delete</button>
@@ -159,7 +159,7 @@ else
         </div>
 
         <div class="mb-3">
-            <label for="quantityConsumed" class="form-label">Quantity</label>
+            <label for="quantityConsumed" class="form-label">Quantity@(FoodUnit(formModel.FoodId) is { Length: > 0 } unit ? $" ({unit})" : "")</label>
             <InputNumber id="quantityConsumed" class="form-control" @bind-Value="formModel.QuantityConsumed" />
         </div>
 
@@ -259,6 +259,11 @@ else
     /// already has one calorie total per day.
     private IReadOnlyList<TrendChart.TrendPoint> CalorieTrendPoints =>
         weeklySummary.Select(d => new TrendChart.TrendPoint(d.Date, d.Calories)).ToList();
+
+    /// Food.Unit ("g", "piece", ...) was never shown next to a quantity, so "2" in this table
+    /// could mean 2 g or 2 servings. Empty when the food is no longer in the catalog.
+    private string FoodUnit(int foodId) =>
+        foodCatalog.FirstOrDefault(f => f.Id == foodId)?.Unit ?? string.Empty;
 
     private string FoodName(int foodId) =>
         foodCatalog.FirstOrDefault(f => f.Id == foodId)?.Name ?? $"#{foodId}";

@@ -124,7 +124,7 @@
                         <ul class="list-group mb-2">
                             @foreach (var log in recentMealLogs)
                             {
-                                <li class="list-group-item">@log.Date.ToLocalTime().ToString("d") &mdash; @log.MealType: @FoodName(log.FoodId), qty @log.QuantityConsumed</li>
+                                <li class="list-group-item">@log.Date.ToLocalTime().ToString("d") &mdash; @log.MealType: @FoodName(log.FoodId), @log.QuantityConsumed @FoodUnit(log.FoodId)</li>
                             }
                         </ul>
                     }
@@ -167,6 +167,9 @@
     /// "Breakfast, qty 2", with no way to tell what was actually eaten.
     private string FoodName(int foodId) =>
         foodCatalog.FirstOrDefault(f => f.Id == foodId)?.Name ?? $"#{foodId}";
+
+    private string FoodUnit(int foodId) =>
+        foodCatalog.FirstOrDefault(f => f.Id == foodId)?.Unit ?? string.Empty;
 
     private async Task LoadDashboardAsync()
     {
