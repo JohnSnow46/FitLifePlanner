@@ -56,7 +56,16 @@ else
                 <tr>
                     <td>@log.Date.ToLocalTime().ToString("d")</td>
                     <td>@log.Notes</td>
-                    <td>@PlanName(log.WorkoutPlanId)</td>
+                    <td>
+                        @if (PlanExists(log.WorkoutPlanId))
+                        {
+                            <a href="/workout-plans/@log.WorkoutPlanId">@PlanName(log.WorkoutPlanId)</a>
+                        }
+                        else
+                        {
+                            @PlanName(log.WorkoutPlanId)
+                        }
+                    </td>
                     <td>@log.TotalVolume.ToString("0.##")</td>
                     <td>
                         <a href="/workout-logs/@log.Id" class="me-2">Details</a>
@@ -160,6 +169,11 @@ else
 
     private IReadOnlyList<TrendChart.TrendPoint> VolumeTrendPoints =>
         logs.Select(l => new TrendChart.TrendPoint(l.Date, l.TotalVolume)).ToList();
+
+    /// Links to the plan only while it still exists -- a deleted plan keeps PlanName's "#id"
+    /// fallback as plain text rather than a link to a 404.
+    private bool PlanExists(int? workoutPlanId) =>
+        workoutPlanId is not null && workoutPlans.Any(p => p.Id == workoutPlanId);
 
     private string PlanName(int? workoutPlanId) =>
         workoutPlanId is null

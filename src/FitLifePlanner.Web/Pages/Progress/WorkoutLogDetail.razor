@@ -20,7 +20,17 @@ else if (log is not null)
 {
     <h1>@log.Date.ToLocalTime().ToString("d")</h1>
     <p>@log.Notes</p>
-    <p>Workout plan: @PlanName(log.WorkoutPlanId)</p>
+    <p>
+        Workout plan:
+        @if (PlanExists(log.WorkoutPlanId))
+        {
+            <a href="/workout-plans/@log.WorkoutPlanId">@PlanName(log.WorkoutPlanId)</a>
+        }
+        else
+        {
+            @PlanName(log.WorkoutPlanId)
+        }
+    </p>
     @if (log.WorkoutPlanId is not null && log.Entries.Count == 0)
     {
         <button type="button" class="btn btn-outline-primary btn-sm" disabled="@isCopyingPlan" @onclick="CopyPlannedExercisesAsync">
@@ -156,6 +166,11 @@ else if (log is not null)
             isLoading = false;
         }
     }
+
+    /// Links to the plan only while it still exists -- a deleted plan keeps PlanName's "#id"
+    /// fallback as plain text rather than a link to a 404.
+    private bool PlanExists(int? workoutPlanId) =>
+        workoutPlanId is not null && workoutPlans.Any(p => p.Id == workoutPlanId);
 
     private string PlanName(int? workoutPlanId) =>
         workoutPlanId is null
