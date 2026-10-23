@@ -21,6 +21,12 @@ else if (log is not null)
     <h1>@log.Date.ToLocalTime().ToString("d")</h1>
     <p>@log.Notes</p>
     <p>Workout plan: @PlanName(log.WorkoutPlanId)</p>
+    @if (log.WorkoutPlanId is not null && log.Entries.Count == 0)
+    {
+        <button type="button" class="btn btn-outline-primary btn-sm" disabled="@isCopyingPlan" @onclick="CopyPlannedExercisesAsync">
+            @(isCopyingPlan ? "Copying..." : "Copy planned exercises")
+        </button>
+    }
 
     <h2 class="mt-4">Entries</h2>
 
@@ -123,6 +129,7 @@ else if (log is not null)
     private readonly AddEntryFormModel addEntryFormModel = new();
     private bool isLoading;
     private bool confirmingDelete;
+    private bool isCopyingPlan;
     private string? errorMessage;
 
     protected override async Task OnParametersSetAsync()
@@ -202,6 +209,47 @@ else if (log is not null)
         catch (ApiException ex)
         {
             errorMessage = ex.Message;
+        }
+    }
+
+    /// A log linked to a plan started empty, so logging "the plan as written" meant re-entering
+    /// every exercise by hand. Copies each planned exercise (in plan order) as an entry with its
+    /// target sets/reps/weight, which the user then adjusts to what they actually did. Only
+    /// offered on an empty log, so it can't silently duplicate entries.
+    private async Task CopyPlannedExercisesAsync()
+    {
+        if (log?.WorkoutPlanId is not int planId)
+        {
+            return;
+        }
+
+        errorMessage = null;
+        isCopyingPlan = true;
+        try
+        {
+            var plan = await WorkoutsApiClient.GetWorkoutPlanAsync(planId);
+            foreach (var planned in plan.Exercises.OrderBy(e => e.Order))
+            {
+                await ProgressApiClient.AddWorkoutLogEntryAsync(LogId, new AddWorkoutLogEntryRequest
+                {
+                    ExerciseId = planned.ExerciseId,
+                    SetsCompleted = planned.TargetSets,
+                    RepsCompleted = planned.TargetReps,
+                    WeightUsed = planned.TargetWeight
+                });
+            }
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            // Some entries may already have been added before the failure -- reload so the table
+            // shows them, then surface the error (LoadAsync clears errorMessage itself).
+            await LoadAsync();
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isCopyingPlan = false;
         }
     }
 
