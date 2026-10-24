@@ -43,7 +43,7 @@ else if (plan is not null)
             </tr>
         </thead>
         <tbody>
-            @foreach (var entry in plan.Entries)
+            @foreach (var entry in OrderedEntries)
             {
                 <tr>
                     <td>@FoodName(entry.FoodId)</td>
@@ -170,6 +170,15 @@ else if (plan is not null)
 
     /// Same unit suffix MealLogs shows -- "2" in a plan entry could otherwise mean 2 g or
     /// 2 servings. Empty when the food is no longer in the catalog.
+    /// Week order (Monday first, matching the form's default day), then meal order within a day,
+    /// then Id -- plan.Entries comes back unsorted, so a week built out of order read as a jumble
+    /// (Friday dinner above Monday breakfast), same gap WorkoutPlanDetail just had with Order.
+    private IEnumerable<MealPlanEntryResponse> OrderedEntries =>
+        (plan?.Entries ?? [])
+            .OrderBy(e => ((int)e.DayOfWeek + 6) % 7)
+            .ThenBy(e => e.MealType)
+            .ThenBy(e => e.Id);
+
     private string FoodUnit(int foodId) =>
         foodCatalog.FirstOrDefault(f => f.Id == foodId)?.Unit ?? string.Empty;
 
