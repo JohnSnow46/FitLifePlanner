@@ -11,6 +11,11 @@
 
 <ErrorAlert Message="@errorMessage" />
 
+<div class="mb-3">
+    <label for="nameFilter" class="form-label">Filter by name</label>
+    <input id="nameFilter" class="form-control" @bind="nameFilter" @bind:event="oninput" />
+</div>
+
 @if (isLoading)
 {
     <LoadingIndicator />
@@ -20,6 +25,7 @@ else
     <table class="table">
         <thead>
             <tr>
+                <th></th>
                 <th>Name</th>
                 <th>Unit</th>
                 <th>Calories/unit</th>
@@ -30,9 +36,14 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var food in foods)
+            @foreach (var food in VisibleFoods)
             {
                 <tr>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-link p-0" aria-label="@(food.IsFavorite ? "Remove from favorites" : "Mark as favorite")" aria-pressed="@food.IsFavorite" @onclick="() => ToggleFavoriteAsync(food)">
+                            <span aria-hidden="true">@(food.IsFavorite ? "★" : "☆")</span>
+                        </button>
+                    </td>
                     <td>@food.Name</td>
                     <td>@food.Unit</td>
                     <td>@food.CaloriesPerUnit</td>
@@ -94,10 +105,18 @@ else
 
 @code {
     private IReadOnlyCollection<FoodResponse> foods = [];
+    private string? nameFilter;
     private int? editingId;
     private readonly FoodFormModel formModel = new();
     private bool isLoading;
     private string? errorMessage;
+
+    private IEnumerable<FoodResponse> VisibleFoods =>
+        (string.IsNullOrWhiteSpace(nameFilter)
+            ? foods
+            : foods.Where(f => f.Name.Contains(nameFilter.Trim(), StringComparison.OrdinalIgnoreCase)))
+        .OrderByDescending(f => f.IsFavorite)
+        .ThenBy(f => f.Name);
 
     protected override async Task OnInitializedAsync()
     {
@@ -183,6 +202,20 @@ else
         }
     }
 
+    private async Task ToggleFavoriteAsync(FoodResponse food)
+    {
+        errorMessage = null;
+        try
+        {
+            await NutritionApiClient.SetFoodFavoriteAsync(food.Id, !food.IsFavorite);
+            await LoadFoodsAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
     private async Task DeleteFoodAsync(int id)
     {
         errorMessage = null;
@@ -200,21 +233,27 @@ else
     private sealed class FoodFormModel
     {
         [Required]
+        [MaxLength(200)]
         public string Name { get; set; } = string.Empty;
 
         [Required]
+        [MaxLength(50)]
         public string Unit { get; set; } = string.Empty;
 
         [Required]
+        [Range(0, double.MaxValue)]
         public decimal CaloriesPerUnit { get; set; }
 
         [Required]
+        [Range(0, double.MaxValue)]
         public decimal ProteinPerUnit { get; set; }
 
         [Required]
+        [Range(0, double.MaxValue)]
         public decimal CarbsPerUnit { get; set; }
 
         [Required]
+        [Range(0, double.MaxValue)]
         public decimal FatPerUnit { get; set; }
     }
 }

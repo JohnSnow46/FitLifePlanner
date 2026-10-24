@@ -20,7 +20,23 @@ else if (log is not null)
 {
     <h1>@log.Date.ToLocalTime().ToString("d")</h1>
     <p>@log.Notes</p>
-    <p>Workout plan: @PlanName(log.WorkoutPlanId)</p>
+    <p>
+        Workout plan:
+        @if (PlanExists(log.WorkoutPlanId))
+        {
+            <a href="/workout-plans/@log.WorkoutPlanId">@PlanName(log.WorkoutPlanId)</a>
+        }
+        else
+        {
+            @PlanName(log.WorkoutPlanId)
+        }
+    </p>
+    @if (log.WorkoutPlanId is not null && log.Entries.Count == 0)
+    {
+        <button type="button" class="btn btn-outline-primary btn-sm" disabled="@isCopyingPlan" @onclick="CopyPlannedExercisesAsync">
+            @(isCopyingPlan ? "Copying..." : "Copy planned exercises")
+        </button>
+    }
 
     <h2 class="mt-4">Entries</h2>
 
@@ -48,6 +64,15 @@ else if (log is not null)
                 </tr>
             }
         </tbody>
+        @if (log.Entries.Count > 0)
+        {
+            <tfoot>
+                <tr class="fw-bold">
+                    <td colspan="3">Log totals</td>
+                    <td colspan="2">@FormatVolume(LogTotalVolume)</td>
+                </tr>
+            </tfoot>
+        }
     </table>
 
     <h3>Add entry</h3>
@@ -60,9 +85,9 @@ else if (log is not null)
             <label for="exercise" class="form-label">Exercise</label>
             <InputSelect id="exercise" class="form-select" @bind-Value="addEntryFormModel.ExerciseId">
                 <option value="0">-- select --</option>
-                @foreach (var exercise in exerciseCatalog)
+                @foreach (var exercise in ExerciseCatalogForPicker)
                 {
-                    <option value="@exercise.Id">@exercise.Name</option>
+                    <option value="@exercise.Id">@(exercise.IsFavorite ? "★ " : "")@exercise.Name</option>
                 }
             </InputSelect>
         </div>
@@ -81,6 +106,11 @@ else if (log is not null)
             <label for="weightUsed" class="form-label">Weight used</label>
             <InputNumber id="weightUsed" class="form-control" @bind-Value="addEntryFormModel.WeightUsed" />
         </div>
+
+        @if (PendingEntryVolume is { } pendingVolume)
+        {
+            <p class="text-muted">This entry adds: @FormatVolume(pendingVolume)</p>
+        }
 
         <button type="submit" class="btn btn-primary">Add entry</button>
     </EditForm>
@@ -109,6 +139,7 @@ else if (log is not null)
     private readonly AddEntryFormModel addEntryFormModel = new();
     private bool isLoading;
     private bool confirmingDelete;
+    private bool isCopyingPlan;
     private string? errorMessage;
 
     protected override async Task OnParametersSetAsync()
@@ -136,6 +167,11 @@ else if (log is not null)
         }
     }
 
+    /// Links to the plan only while it still exists -- a deleted plan keeps PlanName's "#id"
+    /// fallback as plain text rather than a link to a 404.
+    private bool PlanExists(int? workoutPlanId) =>
+        workoutPlanId is not null && workoutPlans.Any(p => p.Id == workoutPlanId);
+
     private string PlanName(int? workoutPlanId) =>
         workoutPlanId is null
             ? "-"
@@ -143,6 +179,29 @@ else if (log is not null)
 
     private string ExerciseName(int exerciseId) =>
         exerciseCatalog.FirstOrDefault(e => e.Id == exerciseId)?.Name ?? $"#{exerciseId}";
+
+    /// Favorites first (same ordering as the Exercises catalog page and WorkoutPlanDetail's
+    /// own exercise picker) so this picker surfaces a user's go-to exercises too.
+    private IEnumerable<ExerciseResponse> ExerciseCatalogForPicker =>
+        exerciseCatalog.OrderByDescending(e => e.IsFavorite).ThenBy(e => e.Name);
+
+    /// Same "sets x reps x weight, summed" formula as ProgressMappings.TotalVolume
+    /// (WorkoutLogResponse, used by the Workout Logs list/trend chart) and as
+    /// WorkoutPlanDetail's own PlanTotalVolume (over targets instead of completed sets) --
+    /// WorkoutLogDetail never showed the same total for the entries it's actually editing.
+    private decimal LogTotalVolume =>
+        log is null
+            ? 0
+            : log.Entries.Sum(e => e.SetsCompleted * e.RepsCompleted * e.WeightUsed);
+
+    /// Same "this exercise adds: ..." live preview WorkoutPlanDetail already has while
+    /// building a plan, over the entry actually being logged instead of a planned target.
+    private decimal? PendingEntryVolume =>
+        addEntryFormModel.ExerciseId <= 0 || addEntryFormModel.SetsCompleted <= 0 || addEntryFormModel.RepsCompleted <= 0
+            ? null
+            : addEntryFormModel.SetsCompleted * addEntryFormModel.RepsCompleted * addEntryFormModel.WeightUsed;
+
+    private static string FormatVolume(decimal volume) => $"{volume:0.#} total volume (sets × reps × weight)";
 
     private async Task HandleAddEntryAsync()
     {
@@ -165,6 +224,47 @@ else if (log is not null)
         catch (ApiException ex)
         {
             errorMessage = ex.Message;
+        }
+    }
+
+    /// A log linked to a plan started empty, so logging "the plan as written" meant re-entering
+    /// every exercise by hand. Copies each planned exercise (in plan order) as an entry with its
+    /// target sets/reps/weight, which the user then adjusts to what they actually did. Only
+    /// offered on an empty log, so it can't silently duplicate entries.
+    private async Task CopyPlannedExercisesAsync()
+    {
+        if (log?.WorkoutPlanId is not int planId)
+        {
+            return;
+        }
+
+        errorMessage = null;
+        isCopyingPlan = true;
+        try
+        {
+            var plan = await WorkoutsApiClient.GetWorkoutPlanAsync(planId);
+            foreach (var planned in plan.Exercises.OrderBy(e => e.Order))
+            {
+                await ProgressApiClient.AddWorkoutLogEntryAsync(LogId, new AddWorkoutLogEntryRequest
+                {
+                    ExerciseId = planned.ExerciseId,
+                    SetsCompleted = planned.TargetSets,
+                    RepsCompleted = planned.TargetReps,
+                    WeightUsed = planned.TargetWeight
+                });
+            }
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            // Some entries may already have been added before the failure -- reload so the table
+            // shows them, then surface the error (LoadAsync clears errorMessage itself).
+            await LoadAsync();
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isCopyingPlan = false;
         }
     }
 

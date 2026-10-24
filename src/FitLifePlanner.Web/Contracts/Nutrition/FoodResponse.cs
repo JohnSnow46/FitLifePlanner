@@ -7,4 +7,5 @@ public record FoodResponse(
     decimal CaloriesPerUnit,
     decimal ProteinPerUnit,
     decimal CarbsPerUnit,
-    decimal FatPerUnit);
+    decimal FatPerUnit,
+    bool IsFavorite);

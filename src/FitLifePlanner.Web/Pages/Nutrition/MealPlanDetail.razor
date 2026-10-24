@@ -43,19 +43,28 @@ else if (plan is not null)
             </tr>
         </thead>
         <tbody>
-            @foreach (var entry in plan.Entries)
+            @foreach (var entry in OrderedEntries)
             {
                 <tr>
                     <td>@FoodName(entry.FoodId)</td>
                     <td>@entry.MealType</td>
                     <td>@entry.DayOfWeek</td>
-                    <td>@entry.Quantity</td>
+                    <td>@entry.Quantity @FoodUnit(entry.FoodId)</td>
                     <td>
                         <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveEntryAsync(entry.Id)">Remove</button>
                     </td>
                 </tr>
             }
         </tbody>
+        @if (plan.Entries.Count > 0)
+        {
+            <tfoot>
+                <tr class="fw-bold">
+                    <td colspan="3">Plan totals</td>
+                    <td colspan="2">@FormatMacros(PlanTotals)</td>
+                </tr>
+            </tfoot>
+        }
     </table>
 
     <h3>Add entry</h3>
@@ -68,9 +77,9 @@ else if (plan is not null)
             <label for="food" class="form-label">Food</label>
             <InputSelect id="food" class="form-select" @bind-Value="addEntryFormModel.FoodId">
                 <option value="0">-- select --</option>
-                @foreach (var food in foodCatalog)
+                @foreach (var food in FoodCatalogForPicker)
                 {
-                    <option value="@food.Id">@food.Name</option>
+                    <option value="@food.Id">@(food.IsFavorite ? "★ " : "")@food.Name</option>
                 }
             </InputSelect>
         </div>
@@ -96,9 +105,14 @@ else if (plan is not null)
         </div>
 
         <div class="mb-3">
-            <label for="quantity" class="form-label">Quantity</label>
+            <label for="quantity" class="form-label">Quantity@(FoodUnit(addEntryFormModel.FoodId) is { Length: > 0 } unit ? $" ({unit})" : "")</label>
             <InputNumber id="quantity" class="form-control" @bind-Value="addEntryFormModel.Quantity" />
         </div>
+
+        @if (PendingEntryMacros is { } pendingMacros)
+        {
+            <p class="text-muted">This entry adds: @FormatMacros(pendingMacros)</p>
+        }
 
         <button type="submit" class="btn btn-primary">Add entry</button>
     </EditForm>
@@ -154,8 +168,58 @@ else if (plan is not null)
         }
     }
 
+    /// Same unit suffix MealLogs shows -- "2" in a plan entry could otherwise mean 2 g or
+    /// 2 servings. Empty when the food is no longer in the catalog.
+    /// Week order (Monday first, matching the form's default day), then meal order within a day,
+    /// then Id -- plan.Entries comes back unsorted, so a week built out of order read as a jumble
+    /// (Friday dinner above Monday breakfast), same gap WorkoutPlanDetail just had with Order.
+    private IEnumerable<MealPlanEntryResponse> OrderedEntries =>
+        (plan?.Entries ?? [])
+            .OrderBy(e => ((int)e.DayOfWeek + 6) % 7)
+            .ThenBy(e => e.MealType)
+            .ThenBy(e => e.Id);
+
+    private string FoodUnit(int foodId) =>
+        foodCatalog.FirstOrDefault(f => f.Id == foodId)?.Unit ?? string.Empty;
+
     private string FoodName(int foodId) =>
         foodCatalog.FirstOrDefault(f => f.Id == foodId)?.Name ?? $"#{foodId}";
+
+    /// Favorites first (same ordering as the Foods catalog page) so the picker surfaces a
+    /// user's go-to foods instead of making them scroll the full catalog every time.
+    private IEnumerable<FoodResponse> FoodCatalogForPicker =>
+        foodCatalog.OrderByDescending(f => f.IsFavorite).ThenBy(f => f.Name);
+
+    private MacroTotals PlanTotals =>
+        plan is null
+            ? new MacroTotals(0, 0, 0, 0)
+            : plan.Entries.Aggregate(new MacroTotals(0, 0, 0, 0), (totals, entry) => totals + MacrosFor(entry.FoodId, entry.Quantity));
+
+    private MacroTotals? PendingEntryMacros =>
+        addEntryFormModel.FoodId <= 0 || addEntryFormModel.Quantity <= 0
+            ? null
+            : MacrosFor(addEntryFormModel.FoodId, addEntryFormModel.Quantity);
+
+    private MacroTotals MacrosFor(int foodId, decimal quantity)
+    {
+        var food = foodCatalog.FirstOrDefault(f => f.Id == foodId);
+        return food is null
+            ? new MacroTotals(0, 0, 0, 0)
+            : new MacroTotals(
+                food.CaloriesPerUnit * quantity,
+                food.ProteinPerUnit * quantity,
+                food.CarbsPerUnit * quantity,
+                food.FatPerUnit * quantity);
+    }
+
+    private static string FormatMacros(MacroTotals macros) =>
+        $"{macros.Calories:0.#} kcal, {macros.Protein:0.#} g protein, {macros.Carbs:0.#} g carbs, {macros.Fat:0.#} g fat";
+
+    private readonly record struct MacroTotals(decimal Calories, decimal Protein, decimal Carbs, decimal Fat)
+    {
+        public static MacroTotals operator +(MacroTotals a, MacroTotals b) =>
+            new(a.Calories + b.Calories, a.Protein + b.Protein, a.Carbs + b.Carbs, a.Fat + b.Fat);
+    }
 
     private async Task HandleRenameAsync()
     {
@@ -227,6 +291,7 @@ else if (plan is not null)
     private sealed class RenameFormModel
     {
         [Required]
+        [MaxLength(200)]
         public string Name { get; set; } = string.Empty;
     }
 

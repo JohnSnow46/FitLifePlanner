@@ -1,0 +1,58 @@
+@* Minimal inline-SVG line chart for a single numeric series over time — no charting
+   dependency, matching this repo's CSV-export precedent of preferring a small
+   hand-rolled solution over a new package for a single display need. *@
+
+@if (Points.Count < 2)
+{
+    <p class="text-muted"><em>Not enough data yet for a trend (need at least 2 entries).</em></p>
+}
+else
+{
+    var minValue = Points.Min(p => p.Value);
+    var maxValue = Points.Max(p => p.Value);
+    var valueRange = maxValue - minValue;
+    if (valueRange == 0)
+    {
+        valueRange = 1;
+    }
+
+    var ordered = Points.OrderBy(p => p.Date).ToList();
+    var stepX = ordered.Count > 1 ? (double)(Width - 2 * Padding) / (ordered.Count - 1) : 0;
+
+    string PointToSvg(int index, decimal value)
+    {
+        var x = Padding + index * stepX;
+        var y = Padding + (double)(maxValue - value) / (double)valueRange * (Height - 2 * Padding);
+        return $"{x.ToString(System.Globalization.CultureInfo.InvariantCulture)},{y.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+    }
+
+    var polylinePoints = string.Join(" ", ordered.Select((p, i) => PointToSvg(i, p.Value)));
+
+    <svg viewBox="0 0 @Width @Height" class="w-100" style="max-height: 200px" role="img" aria-label="@Label trend">
+        <polyline points="@polylinePoints" fill="none" stroke="currentColor" stroke-width="2" />
+        @for (var i = 0; i < ordered.Count; i++)
+        {
+            var svgPoint = PointToSvg(i, ordered[i].Value).Split(',');
+            <circle cx="@svgPoint[0]" cy="@svgPoint[1]" r="3" fill="currentColor" />
+        }
+    </svg>
+    <div class="d-flex justify-content-between text-muted small">
+        <span>@ordered[0].Date.ToString("d")</span>
+        <span>@Label: @ordered[0].Value.ToString("0.##") → @ordered[^1].Value.ToString("0.##")</span>
+        <span>@ordered[^1].Date.ToString("d")</span>
+    </div>
+}
+
+@code {
+    public sealed record TrendPoint(DateTime Date, decimal Value);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<TrendPoint> Points { get; set; } = [];
+
+    [Parameter]
+    public string Label { get; set; } = "Value";
+
+    private const int Width = 600;
+    private const int Height = 160;
+    private const int Padding = 8;
+}

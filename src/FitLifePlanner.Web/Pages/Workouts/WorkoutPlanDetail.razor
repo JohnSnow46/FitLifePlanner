@@ -44,7 +44,11 @@ else if (plan is not null)
             </tr>
         </thead>
         <tbody>
-            @foreach (var planExercise in plan.Exercises)
+            @* Sorted by the plan's own Order field (then Id for ties) -- the API mapping does not sort
+               them, so an exercise added later with a lower Order could show up at the bottom
+               even though the Order column said otherwise. Duplicate and "copy planned exercises"
+               already honor Order. *@
+            @foreach (var planExercise in plan.Exercises.OrderBy(e => e.Order).ThenBy(e => e.Id))
             {
                 <tr>
                     <td>@ExerciseName(planExercise.ExerciseId)</td>
@@ -58,6 +62,15 @@ else if (plan is not null)
                 </tr>
             }
         </tbody>
+        @if (plan.Exercises.Count > 0)
+        {
+            <tfoot>
+                <tr class="fw-bold">
+                    <td colspan="4">Plan totals</td>
+                    <td colspan="2">@FormatVolume(PlanTotalVolume)</td>
+                </tr>
+            </tfoot>
+        }
     </table>
 
     <h3>Add exercise</h3>
@@ -70,9 +83,9 @@ else if (plan is not null)
             <label for="exercise" class="form-label">Exercise</label>
             <InputSelect id="exercise" class="form-select" @bind-Value="addExerciseFormModel.ExerciseId">
                 <option value="0">-- select --</option>
-                @foreach (var exercise in exerciseCatalog)
+                @foreach (var exercise in ExerciseCatalogForPicker)
                 {
-                    <option value="@exercise.Id">@exercise.Name</option>
+                    <option value="@exercise.Id">@(exercise.IsFavorite ? "★ " : "")@exercise.Name</option>
                 }
             </InputSelect>
         </div>
@@ -96,6 +109,11 @@ else if (plan is not null)
             <label for="targetWeight" class="form-label">Target weight</label>
             <InputNumber id="targetWeight" class="form-control" @bind-Value="addExerciseFormModel.TargetWeight" />
         </div>
+
+        @if (PendingExerciseVolume is { } pendingVolume)
+        {
+            <p class="text-muted">This exercise adds: @FormatVolume(pendingVolume)</p>
+        }
 
         <button type="submit" class="btn btn-primary">Add exercise</button>
     </EditForm>
@@ -153,6 +171,26 @@ else if (plan is not null)
 
     private string ExerciseName(int exerciseId) =>
         exerciseCatalog.FirstOrDefault(e => e.Id == exerciseId)?.Name ?? $"#{exerciseId}";
+
+    /// Favorites first (same ordering as the Exercises catalog page) so the picker surfaces
+    /// a user's go-to exercises instead of making them scroll the full catalog every time.
+    private IEnumerable<ExerciseResponse> ExerciseCatalogForPicker =>
+        exerciseCatalog.OrderByDescending(e => e.IsFavorite).ThenBy(e => e.Name);
+
+    /// Same "sets x reps x weight, summed" formula as WorkoutLogResponse.TotalVolume
+    /// (ProgressMappings.TotalVolume) -- here applied to planned targets instead of
+    /// completed sets, so a plan under construction gets the same at-a-glance total.
+    private decimal PlanTotalVolume =>
+        plan is null
+            ? 0
+            : plan.Exercises.Sum(e => e.TargetSets * e.TargetReps * e.TargetWeight);
+
+    private decimal? PendingExerciseVolume =>
+        addExerciseFormModel.ExerciseId <= 0
+            ? null
+            : addExerciseFormModel.TargetSets * addExerciseFormModel.TargetReps * addExerciseFormModel.TargetWeight;
+
+    private static string FormatVolume(decimal volume) => $"{volume:0.#} total volume (sets × reps × weight)";
 
     private async Task HandleRenameAsync()
     {
@@ -226,6 +264,7 @@ else if (plan is not null)
     private sealed class RenameFormModel
     {
         [Required]
+        [MaxLength(200)]
         public string Name { get; set; } = string.Empty;
     }
 
@@ -237,10 +276,10 @@ else if (plan is not null)
         [Range(0, int.MaxValue)]
         public int Order { get; set; }
 
-        [Range(0, int.MaxValue)]
+        [Range(1, int.MaxValue)]
         public int TargetSets { get; set; }
 
-        [Range(0, int.MaxValue)]
+        [Range(1, int.MaxValue)]
         public int TargetReps { get; set; }
 
         [Range(0, double.MaxValue)]
