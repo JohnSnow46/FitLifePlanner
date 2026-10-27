@@ -11,6 +11,11 @@
 
 <ErrorAlert Message="@errorMessage" />
 
+<div class="mb-3">
+    <label for="nameFilter" class="form-label">Filter by name</label>
+    <input id="nameFilter" class="form-control" @bind="nameFilter" @bind:event="oninput" />
+</div>
+
 @if (isLoading)
 {
     <LoadingIndicator />
@@ -27,7 +32,7 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var plan in plans)
+            @foreach (var plan in VisiblePlans)
             {
                 <tr>
                     <td>@plan.Name</td>
@@ -56,9 +61,17 @@ else
 
 @code {
     private IReadOnlyCollection<WorkoutPlanResponse> plans = [];
+    private string? nameFilter;
     private readonly WorkoutPlanFormModel formModel = new();
     private bool isLoading;
     private string? errorMessage;
+
+    // Same name filter Exercises/Foods already have -- plans only accumulate (Duplicate
+    // adds a "(Copy)" each time), and the list had no way to narrow it down.
+    private IEnumerable<WorkoutPlanResponse> VisiblePlans =>
+        string.IsNullOrWhiteSpace(nameFilter)
+            ? plans
+            : plans.Where(p => p.Name.Contains(nameFilter.Trim(), StringComparison.OrdinalIgnoreCase));
 
     protected override async Task OnInitializedAsync()
     {
