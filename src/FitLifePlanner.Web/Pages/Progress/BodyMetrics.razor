@@ -125,6 +125,13 @@ else
         </tbody>
     </table>
 
+    @* Same "empty list vs. empty result" gap the catalog/plan lists had: an empty table header
+       alone didn't say whether there's no data at all or just none in the chosen dates. *@
+    @if (entries.Count == 0)
+    {
+        <p>@(fromFilter is null && toFilter is null ? "No body metric entries yet." : "No body metric entries in the selected date range.")</p>
+    }
+
     <h2>New entry</h2>
 
     <EditForm Model="formModel" OnValidSubmit="HandleSubmitAsync">
