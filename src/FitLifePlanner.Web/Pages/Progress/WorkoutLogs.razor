@@ -69,7 +69,17 @@ else
                     <td>@log.TotalVolume.ToString("0.##")</td>
                     <td>
                         <a href="/workout-logs/@log.Id" class="me-2">Details</a>
-                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteLogAsync(log.Id)">Delete</button>
+                        @* Same two-step confirm WorkoutLogDetail's "Delete log" has -- this row button
+                           deleted the whole session, entries included, on a single click. *@
+                        @if (confirmingDeleteId == log.Id)
+                        {
+                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => DeleteLogAsync(log.Id)">Confirm delete</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingDeleteId = null">Cancel</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingDeleteId = log.Id">Delete</button>
+                        }
                     </td>
                 </tr>
             }
@@ -116,6 +126,7 @@ else
 
 @code {
     private IReadOnlyCollection<WorkoutLogResponse> logs = [];
+    private int? confirmingDeleteId;
     private IReadOnlyCollection<WorkoutPlanResponse> workoutPlans = [];
     private readonly WorkoutLogFormModel formModel = new();
     private DateTime? fromFilter;
@@ -220,6 +231,10 @@ else
         catch (ApiException ex)
         {
             errorMessage = ex.Message;
+        }
+        finally
+        {
+            confirmingDeleteId = null;
         }
     }
 
