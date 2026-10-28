@@ -11,6 +11,11 @@
 
 <ErrorAlert Message="@errorMessage" />
 
+<div class="mb-3">
+    <label for="nameFilter" class="form-label">Filter by name</label>
+    <input id="nameFilter" class="form-control" @bind="nameFilter" @bind:event="oninput" />
+</div>
+
 @if (isLoading)
 {
     <LoadingIndicator />
@@ -26,7 +31,7 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var plan in plans)
+            @foreach (var plan in VisiblePlans)
             {
                 <tr>
                     <td>@plan.Name</td>
@@ -54,9 +59,17 @@ else
 
 @code {
     private IReadOnlyCollection<MealPlanResponse> plans = [];
+    private string? nameFilter;
     private readonly MealPlanFormModel formModel = new();
     private bool isLoading;
     private string? errorMessage;
+
+    // Same name filter WorkoutPlans got on 2026-10-27 -- this list grows the same way
+    // (each Duplicate adds another "(Copy)" plan).
+    private IEnumerable<MealPlanResponse> VisiblePlans =>
+        string.IsNullOrWhiteSpace(nameFilter)
+            ? plans
+            : plans.Where(p => p.Name.Contains(nameFilter.Trim(), StringComparison.OrdinalIgnoreCase));
 
     protected override async Task OnInitializedAsync()
     {
