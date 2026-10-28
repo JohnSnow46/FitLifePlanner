@@ -42,6 +42,12 @@ else
         </tbody>
     </table>
 
+    @* An empty catalog or a filter with no match used to render just the header row. *@
+    @if (!VisiblePlans.Any())
+    {
+        <p>@(plans.Count == 0 ? "No meal plans yet." : "No meal plans match the filter.")</p>
+    }
+
     <h2>New plan</h2>
 
     <EditForm Model="formModel" OnValidSubmit="HandleSubmitAsync">

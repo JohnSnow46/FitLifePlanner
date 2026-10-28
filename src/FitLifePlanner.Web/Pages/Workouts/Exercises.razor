@@ -59,6 +59,12 @@ else
         </tbody>
     </table>
 
+    @* An empty catalog or a filter with no match used to render just the header row. *@
+    @if (!VisibleExercises.Any())
+    {
+        <p>@(exercises.Count == 0 ? "No exercises yet." : "No exercises match the filter.")</p>
+    }
+
     <h2>@(editingId is null ? "Add exercise" : "Edit exercise")</h2>
 
     <EditForm Model="formModel" OnValidSubmit="HandleSubmitAsync">

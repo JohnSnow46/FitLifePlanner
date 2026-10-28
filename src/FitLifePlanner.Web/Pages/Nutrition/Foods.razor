@@ -59,6 +59,12 @@ else
         </tbody>
     </table>
 
+    @* An empty catalog or a filter with no match used to render just the header row. *@
+    @if (!VisibleFoods.Any())
+    {
+        <p>@(foods.Count == 0 ? "No foods yet." : "No foods match the filter.")</p>
+    }
+
     <h2>@(editingId is null ? "Add food" : "Edit food")</h2>
 
     <EditForm Model="formModel" OnValidSubmit="HandleSubmitAsync">
