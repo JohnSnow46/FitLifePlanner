@@ -52,7 +52,16 @@ else
                     <td>@exercise.Description</td>
                     <td>
                         <button type="button" class="btn btn-sm btn-outline-primary me-2" @onclick="() => StartEdit(exercise)">Edit</button>
-                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteExerciseAsync(exercise.Id)">Delete</button>
+                        @* Same two-step confirm as the log lists -- one click used to remove the exercise from the catalog. *@
+                        @if (confirmingDeleteId == exercise.Id)
+                        {
+                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => DeleteExerciseAsync(exercise.Id)">Confirm delete</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingDeleteId = null">Cancel</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingDeleteId = exercise.Id">Delete</button>
+                        }
                     </td>
                 </tr>
             }
@@ -96,6 +105,7 @@ else
 
 @code {
     private IReadOnlyCollection<ExerciseResponse> exercises = [];
+    private int? confirmingDeleteId;
     private string? nameFilter;
     private string? muscleGroupFilter;
     private int? editingId;
@@ -211,6 +221,10 @@ else
         catch (ApiException ex)
         {
             errorMessage = ex.Message;
+        }
+        finally
+        {
+            confirmingDeleteId = null;
         }
     }
 

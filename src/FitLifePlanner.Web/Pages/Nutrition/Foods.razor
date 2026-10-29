@@ -52,7 +52,16 @@ else
                     <td>@food.FatPerUnit</td>
                     <td>
                         <button type="button" class="btn btn-sm btn-outline-primary me-2" @onclick="() => StartEdit(food)">Edit</button>
-                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteFoodAsync(food.Id)">Delete</button>
+                        @* Same two-step confirm as the log lists -- one click used to remove the food from the catalog. *@
+                        @if (confirmingDeleteId == food.Id)
+                        {
+                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => DeleteFoodAsync(food.Id)">Confirm delete</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingDeleteId = null">Cancel</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingDeleteId = food.Id">Delete</button>
+                        }
                     </td>
                 </tr>
             }
@@ -111,6 +120,7 @@ else
 
 @code {
     private IReadOnlyCollection<FoodResponse> foods = [];
+    private int? confirmingDeleteId;
     private string? nameFilter;
     private int? editingId;
     private readonly FoodFormModel formModel = new();
@@ -233,6 +243,10 @@ else
         catch (ApiException ex)
         {
             errorMessage = ex.Message;
+        }
+        finally
+        {
+            confirmingDeleteId = null;
         }
     }
 
