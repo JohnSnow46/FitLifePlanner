@@ -118,7 +118,16 @@ else
                     <td>@entry.BodyFatPercent</td>
                     <td>@entry.Notes</td>
                     <td>
-                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteEntryAsync(entry.Id)">Delete</button>
+                        @* Same two-step confirm the WorkoutLogs rows got -- one click used to delete the entry. *@
+                        @if (confirmingDeleteId == entry.Id)
+                        {
+                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => DeleteEntryAsync(entry.Id)">Confirm delete</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingDeleteId = null">Cancel</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingDeleteId = entry.Id">Delete</button>
+                        }
                     </td>
                 </tr>
             }
@@ -164,6 +173,7 @@ else
 
 @code {
     private IReadOnlyCollection<BodyMetricEntryResponse> entries = [];
+    private int? confirmingDeleteId;
     private readonly BodyMetricEntryFormModel formModel = new();
     private readonly GoalsFormModel goalsFormModel = new();
     private DateTime? fromFilter;
@@ -295,6 +305,10 @@ else
         catch (ApiException ex)
         {
             errorMessage = ex.Message;
+        }
+        finally
+        {
+            confirmingDeleteId = null;
         }
     }
 
