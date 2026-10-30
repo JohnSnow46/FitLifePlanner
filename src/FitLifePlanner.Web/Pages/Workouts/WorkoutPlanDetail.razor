@@ -41,7 +41,8 @@ else if (plan is not null)
                 <th>Order</th>
                 <th>Sets</th>
                 <th>Reps</th>
-                <th>Weight</th>
+                @* Kg, same unit as the body weights on BodyMetrics and the demo seed (bench 60, squat 80). *@
+                <th>Weight (kg)</th>
                 <th></th>
             </tr>
         </thead>
@@ -108,7 +109,7 @@ else if (plan is not null)
         </div>
 
         <div class="mb-3">
-            <label for="targetWeight" class="form-label">Target weight</label>
+            <label for="targetWeight" class="form-label">Target weight (kg)</label>
             <InputNumber id="targetWeight" class="form-control" @bind-Value="addExerciseFormModel.TargetWeight" />
         </div>
 

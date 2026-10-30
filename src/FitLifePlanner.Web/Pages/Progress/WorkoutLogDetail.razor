@@ -47,7 +47,8 @@ else if (log is not null)
                 <th>Exercise</th>
                 <th>Sets</th>
                 <th>Reps</th>
-                <th>Weight</th>
+                @* Kg, same unit as WorkoutPlanDetail's target weights. *@
+                <th>Weight (kg)</th>
                 <th></th>
             </tr>
         </thead>
@@ -104,7 +105,7 @@ else if (log is not null)
         </div>
 
         <div class="mb-3">
-            <label for="weightUsed" class="form-label">Weight used</label>
+            <label for="weightUsed" class="form-label">Weight used (kg)</label>
             <InputNumber id="weightUsed" class="form-control" @bind-Value="addEntryFormModel.WeightUsed" />
         </div>
 
