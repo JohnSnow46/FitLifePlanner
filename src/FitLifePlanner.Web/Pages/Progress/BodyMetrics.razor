@@ -2,14 +2,72 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @using System.ComponentModel.DataAnnotations
 @using FitLifePlanner.Web.Contracts.Progress
+@using FitLifePlanner.Web.Contracts.Users
 @using FitLifePlanner.Web.Services
 @inject ProgressApiClient ProgressApiClient
+@inject UsersApiClient UsersApiClient
+@inject IJSRuntime JsRuntime
 
 <PageTitle>Body Metrics</PageTitle>
 
 <h1>Body Metrics</h1>
 
 <ErrorAlert Message="@errorMessage" />
+
+<h2>Goal</h2>
+
+<EditForm Model="goalsFormModel" OnValidSubmit="HandleSaveGoalsAsync">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="row mb-3">
+        <div class="col-auto">
+            <label for="targetWeight" class="form-label">Target weight (kg)</label>
+            <InputNumber id="targetWeight" class="form-control" @bind-Value="goalsFormModel.TargetWeight" />
+        </div>
+        <div class="col-auto">
+            <label for="targetBodyFatPercent" class="form-label">Target body fat %</label>
+            <InputNumber id="targetBodyFatPercent" class="form-control" @bind-Value="goalsFormModel.TargetBodyFatPercent" />
+        </div>
+        <div class="col-auto align-self-end">
+            <button type="submit" class="btn btn-outline-primary">Save goal</button>
+        </div>
+    </div>
+</EditForm>
+
+@if (latestEntry is not null && goalsFormModel.TargetWeight is decimal targetWeight)
+{
+    var remaining = latestEntry.Weight - targetWeight;
+    <p>
+        Latest weight @latestEntry.Weight kg, target @targetWeight kg —
+        @if (remaining == 0)
+        {
+            <strong>goal reached.</strong>
+        }
+        else
+        {
+            <strong>@Math.Abs(remaining).ToString("0.##") kg @(remaining > 0 ? "to lose" : "to gain").</strong>
+        }
+    </p>
+}
+
+@* Same progress line for the body-fat goal -- TargetBodyFatPercent has been saved by the goal
+   form since it was added, but only the weight goal was ever compared against an entry. *@
+@if (latestBodyFatEntry?.BodyFatPercent is decimal latestBodyFat && goalsFormModel.TargetBodyFatPercent is decimal targetBodyFat)
+{
+    var remainingBodyFat = latestBodyFat - targetBodyFat;
+    <p>
+        Latest body fat @latestBodyFat%, target @targetBodyFat% —
+        @if (remainingBodyFat == 0)
+        {
+            <strong>goal reached.</strong>
+        }
+        else
+        {
+            <strong>@Math.Abs(remainingBodyFat).ToString("0.##") percentage points @(remainingBodyFat > 0 ? "to lose" : "to gain").</strong>
+        }
+    </p>
+}
 
 <div class="row mb-3">
     <div class="col-auto">
@@ -23,6 +81,9 @@
     <div class="col-auto align-self-end">
         <button type="button" class="btn btn-outline-secondary" @onclick="LoadEntriesAsync">Filter</button>
     </div>
+    <div class="col-auto align-self-end">
+        <button type="button" class="btn btn-outline-secondary" @onclick="DownloadCsvAsync">Download CSV</button>
+    </div>
 </div>
 
 @if (isLoading)
@@ -31,11 +92,20 @@
 }
 else
 {
+    <h2>Trend</h2>
+    <TrendChart Points="@WeightTrendPoints" Label="Weight (kg)" />
+    @if (BodyFatTrendPoints.Count > 0)
+    {
+        <TrendChart Points="@BodyFatTrendPoints" Label="Body fat %" />
+    }
+
     <table class="table">
         <thead>
             <tr>
                 <th>Date</th>
-                <th>Weight</th>
+                @* Body weight is kg throughout (the dashboard's latest-weight line and the demo seed
+                   already say so) -- this page printed bare numbers everywhere. *@
+                <th>Weight (kg)</th>
                 <th>Body fat %</th>
                 <th>Notes</th>
                 <th></th>
@@ -50,12 +120,28 @@ else
                     <td>@entry.BodyFatPercent</td>
                     <td>@entry.Notes</td>
                     <td>
-                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteEntryAsync(entry.Id)">Delete</button>
+                        @* Same two-step confirm the WorkoutLogs rows got -- one click used to delete the entry. *@
+                        @if (confirmingDeleteId == entry.Id)
+                        {
+                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => DeleteEntryAsync(entry.Id)">Confirm delete</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingDeleteId = null">Cancel</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingDeleteId = entry.Id">Delete</button>
+                        }
                     </td>
                 </tr>
             }
         </tbody>
     </table>
+
+    @* Same "empty list vs. empty result" gap the catalog/plan lists had: an empty table header
+       alone didn't say whether there's no data at all or just none in the chosen dates. *@
+    @if (entries.Count == 0)
+    {
+        <p>@(fromFilter is null && toFilter is null ? "No body metric entries yet." : "No body metric entries in the selected date range.")</p>
+    }
 
     <h2>New entry</h2>
 
@@ -69,7 +155,7 @@ else
         </div>
 
         <div class="mb-3">
-            <label for="weight" class="form-label">Weight</label>
+            <label for="weight" class="form-label">Weight (kg)</label>
             <InputNumber id="weight" class="form-control" @bind-Value="formModel.Weight" />
         </div>
 
@@ -89,15 +175,69 @@ else
 
 @code {
     private IReadOnlyCollection<BodyMetricEntryResponse> entries = [];
+    private int? confirmingDeleteId;
     private readonly BodyMetricEntryFormModel formModel = new();
+    private readonly GoalsFormModel goalsFormModel = new();
     private DateTime? fromFilter;
     private DateTime? toFilter;
     private bool isLoading;
     private string? errorMessage;
 
+    /// Not every entry records body fat, so the body-fat goal compares against the latest entry
+    /// that has it rather than latestEntry.
+    private BodyMetricEntryResponse? latestBodyFatEntry =>
+        entries.Where(e => e.BodyFatPercent is not null).MaxBy(e => e.Date);
+
+    private BodyMetricEntryResponse? latestEntry =>
+        entries.OrderByDescending(e => e.Date).FirstOrDefault();
+
+    private IReadOnlyList<TrendChart.TrendPoint> WeightTrendPoints =>
+        entries.Select(e => new TrendChart.TrendPoint(e.Date, e.Weight)).ToList();
+
+    /// Only entries that recorded body fat -- an entry without it isn't a 0% data point.
+    /// Hidden entirely when no entry has body fat, so users who never track it don't get a
+    /// second "not enough data" placeholder under the weight chart.
+    private IReadOnlyList<TrendChart.TrendPoint> BodyFatTrendPoints =>
+        entries
+            .Where(e => e.BodyFatPercent is not null)
+            .Select(e => new TrendChart.TrendPoint(e.Date, e.BodyFatPercent!.Value))
+            .ToList();
+
     protected override async Task OnInitializedAsync()
     {
         await LoadEntriesAsync();
+        await LoadGoalsAsync();
+    }
+
+    private async Task LoadGoalsAsync()
+    {
+        try
+        {
+            var user = await UsersApiClient.GetCurrentUserAsync();
+            goalsFormModel.TargetWeight = user.TargetWeight;
+            goalsFormModel.TargetBodyFatPercent = user.TargetBodyFatPercent;
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task HandleSaveGoalsAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            await UsersApiClient.UpdateGoalsAsync(new UpdateBodyGoalsRequest
+            {
+                TargetWeight = goalsFormModel.TargetWeight,
+                TargetBodyFatPercent = goalsFormModel.TargetBodyFatPercent
+            });
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
     }
 
     private async Task LoadEntriesAsync()
@@ -142,6 +282,20 @@ else
         }
     }
 
+    private async Task DownloadCsvAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            var csv = await ProgressApiClient.ExportBodyMetricEntriesCsvAsync(fromFilter, toFilter);
+            await JsRuntime.InvokeVoidAsync("downloadFile", "body-metrics.csv", "text/csv", csv);
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
     private async Task DeleteEntryAsync(int id)
     {
         errorMessage = null;
@@ -154,6 +308,10 @@ else
         {
             errorMessage = ex.Message;
         }
+        finally
+        {
+            confirmingDeleteId = null;
+        }
     }
 
     private sealed class BodyMetricEntryFormModel
@@ -164,8 +322,19 @@ else
         [Range(0.01, double.MaxValue)]
         public decimal Weight { get; set; }
 
+        [Range(0, 100)]
         public decimal? BodyFatPercent { get; set; }
 
+        [MaxLength(2000)]
         public string Notes { get; set; } = string.Empty;
+    }
+
+    private sealed class GoalsFormModel
+    {
+        [Range(0.01, double.MaxValue)]
+        public decimal? TargetWeight { get; set; }
+
+        [Range(0, 100)]
+        public decimal? TargetBodyFatPercent { get; set; }
     }
 }

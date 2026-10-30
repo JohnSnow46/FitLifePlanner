@@ -11,6 +11,11 @@
 
 <ErrorAlert Message="@errorMessage" />
 
+<div class="mb-3">
+    <label for="nameFilter" class="form-label">Filter by name</label>
+    <input id="nameFilter" class="form-control" @bind="nameFilter" @bind:event="oninput" />
+</div>
+
 @if (isLoading)
 {
     <LoadingIndicator />
@@ -22,18 +27,26 @@ else
             <tr>
                 <th>Name</th>
                 <th></th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var plan in plans)
+            @foreach (var plan in VisiblePlans)
             {
                 <tr>
                     <td>@plan.Name</td>
                     <td><a href="/meal-plans/@plan.Id">Details</a></td>
+                    <td><button type="button" class="btn btn-link p-0" @onclick="() => DuplicateAsync(plan.Id)">Duplicate</button></td>
                 </tr>
             }
         </tbody>
     </table>
+
+    @* An empty catalog or a filter with no match used to render just the header row. *@
+    @if (!VisiblePlans.Any())
+    {
+        <p>@(plans.Count == 0 ? "No meal plans yet." : "No meal plans match the filter.")</p>
+    }
 
     <h2>New plan</h2>
 
@@ -52,9 +65,17 @@ else
 
 @code {
     private IReadOnlyCollection<MealPlanResponse> plans = [];
+    private string? nameFilter;
     private readonly MealPlanFormModel formModel = new();
     private bool isLoading;
     private string? errorMessage;
+
+    // Same name filter WorkoutPlans got on 2026-10-27 -- this list grows the same way
+    // (each Duplicate adds another "(Copy)" plan).
+    private IEnumerable<MealPlanResponse> VisiblePlans =>
+        string.IsNullOrWhiteSpace(nameFilter)
+            ? plans
+            : plans.Where(p => p.Name.Contains(nameFilter.Trim(), StringComparison.OrdinalIgnoreCase));
 
     protected override async Task OnInitializedAsync()
     {
@@ -79,6 +100,20 @@ else
         }
     }
 
+    private async Task DuplicateAsync(int id)
+    {
+        errorMessage = null;
+        try
+        {
+            await NutritionApiClient.DuplicateMealPlanAsync(id);
+            await LoadPlansAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
     private async Task HandleSubmitAsync()
     {
         errorMessage = null;
@@ -97,6 +132,7 @@ else
     private sealed class MealPlanFormModel
     {
         [Required]
+        [MaxLength(200)]
         public string Name { get; set; } = string.Empty;
     }
 }

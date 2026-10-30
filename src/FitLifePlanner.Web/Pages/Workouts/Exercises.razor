@@ -11,12 +11,15 @@
 
 <ErrorAlert Message="@errorMessage" />
 
-<div class="mb-3 d-flex align-items-end gap-2">
-    <div>
-        <label for="muscleGroupFilter" class="form-label">Muscle group</label>
+<div class="row mb-3">
+    <div class="col">
+        <label for="nameFilter" class="form-label">Filter by name</label>
+        <input id="nameFilter" class="form-control" @bind="nameFilter" @bind:event="oninput" />
+    </div>
+    <div class="col">
+        <label for="muscleGroupFilter" class="form-label">Filter by muscle group</label>
         <input id="muscleGroupFilter" class="form-control" @bind="muscleGroupFilter" @bind:event="oninput" />
     </div>
-    <button type="button" class="btn btn-secondary" @onclick="LoadExercisesAsync">Filter</button>
 </div>
 
 @if (isLoading)
@@ -28,6 +31,7 @@ else
     <table class="table">
         <thead>
             <tr>
+                <th></th>
                 <th>Name</th>
                 <th>Muscle group</th>
                 <th>Description</th>
@@ -35,20 +39,40 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var exercise in exercises)
+            @foreach (var exercise in VisibleExercises)
             {
                 <tr>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-link p-0" aria-label="@(exercise.IsFavorite ? "Remove from favorites" : "Mark as favorite")" aria-pressed="@exercise.IsFavorite" @onclick="() => ToggleFavoriteAsync(exercise)">
+                            <span aria-hidden="true">@(exercise.IsFavorite ? "★" : "☆")</span>
+                        </button>
+                    </td>
                     <td>@exercise.Name</td>
                     <td>@exercise.MuscleGroup</td>
                     <td>@exercise.Description</td>
                     <td>
                         <button type="button" class="btn btn-sm btn-outline-primary me-2" @onclick="() => StartEdit(exercise)">Edit</button>
-                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteExerciseAsync(exercise.Id)">Delete</button>
+                        @* Same two-step confirm as the log lists -- one click used to remove the exercise from the catalog. *@
+                        @if (confirmingDeleteId == exercise.Id)
+                        {
+                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => DeleteExerciseAsync(exercise.Id)">Confirm delete</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingDeleteId = null">Cancel</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingDeleteId = exercise.Id">Delete</button>
+                        }
                     </td>
                 </tr>
             }
         </tbody>
     </table>
+
+    @* An empty catalog or a filter with no match used to render just the header row. *@
+    @if (!VisibleExercises.Any())
+    {
+        <p>@(exercises.Count == 0 ? "No exercises yet." : "No exercises match the filter.")</p>
+    }
 
     <h2>@(editingId is null ? "Add exercise" : "Edit exercise")</h2>
 
@@ -81,11 +105,24 @@ else
 
 @code {
     private IReadOnlyCollection<ExerciseResponse> exercises = [];
+    private int? confirmingDeleteId;
+    private string? nameFilter;
     private string? muscleGroupFilter;
     private int? editingId;
     private readonly ExerciseFormModel formModel = new();
     private bool isLoading;
     private string? errorMessage;
+
+    /// Name filter mirrors Foods.razor's (which was itself modeled on this page's muscle-group
+    /// filter) -- both filters combine, so "press" + "chest" narrows to chest presses.
+    private IEnumerable<ExerciseResponse> VisibleExercises =>
+        exercises
+        .Where(e => string.IsNullOrWhiteSpace(nameFilter)
+            || e.Name.Contains(nameFilter.Trim(), StringComparison.OrdinalIgnoreCase))
+        .Where(e => string.IsNullOrWhiteSpace(muscleGroupFilter)
+            || e.MuscleGroup.Contains(muscleGroupFilter.Trim(), StringComparison.OrdinalIgnoreCase))
+        .OrderByDescending(e => e.IsFavorite)
+        .ThenBy(e => e.Name);
 
     protected override async Task OnInitializedAsync()
     {
@@ -98,7 +135,7 @@ else
         errorMessage = null;
         try
         {
-            exercises = await WorkoutsApiClient.GetExercisesAsync(muscleGroupFilter);
+            exercises = await WorkoutsApiClient.GetExercisesAsync();
         }
         catch (ApiException ex)
         {
@@ -159,6 +196,20 @@ else
         }
     }
 
+    private async Task ToggleFavoriteAsync(ExerciseResponse exercise)
+    {
+        errorMessage = null;
+        try
+        {
+            await WorkoutsApiClient.SetExerciseFavoriteAsync(exercise.Id, !exercise.IsFavorite);
+            await LoadExercisesAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
     private async Task DeleteExerciseAsync(int id)
     {
         errorMessage = null;
@@ -171,17 +222,24 @@ else
         {
             errorMessage = ex.Message;
         }
+        finally
+        {
+            confirmingDeleteId = null;
+        }
     }
 
     private sealed class ExerciseFormModel
     {
         [Required]
+        [MaxLength(200)]
         public string Name { get; set; } = string.Empty;
 
         [Required]
+        [MaxLength(100)]
         public string MuscleGroup { get; set; } = string.Empty;
 
         [Required]
+        [MaxLength(2000)]
         public string Description { get; set; } = string.Empty;
     }
 }

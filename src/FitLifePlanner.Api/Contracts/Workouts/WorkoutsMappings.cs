@@ -5,7 +5,7 @@ namespace FitLifePlanner.Api.Contracts.Workouts;
 public static class WorkoutsMappings
 {
     public static ExerciseResponse ToResponse(this Exercise exercise) =>
-        new(exercise.Id, exercise.Name, exercise.MuscleGroup, exercise.Description);
+        new(exercise.Id, exercise.Name, exercise.MuscleGroup, exercise.Description, exercise.IsFavorite);
 
     public static WorkoutPlanResponse ToResponse(this WorkoutPlan plan) =>
         new(plan.Id, plan.Name, plan.CreatedAt);
