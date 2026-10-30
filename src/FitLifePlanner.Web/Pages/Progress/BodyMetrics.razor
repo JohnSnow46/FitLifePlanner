@@ -22,7 +22,7 @@
 
     <div class="row mb-3">
         <div class="col-auto">
-            <label for="targetWeight" class="form-label">Target weight</label>
+            <label for="targetWeight" class="form-label">Target weight (kg)</label>
             <InputNumber id="targetWeight" class="form-control" @bind-Value="goalsFormModel.TargetWeight" />
         </div>
         <div class="col-auto">
@@ -39,14 +39,14 @@
 {
     var remaining = latestEntry.Weight - targetWeight;
     <p>
-        Latest weight @latestEntry.Weight, target @targetWeight —
+        Latest weight @latestEntry.Weight kg, target @targetWeight kg —
         @if (remaining == 0)
         {
             <strong>goal reached.</strong>
         }
         else
         {
-            <strong>@Math.Abs(remaining).ToString("0.##") @(remaining > 0 ? "to lose" : "to gain").</strong>
+            <strong>@Math.Abs(remaining).ToString("0.##") kg @(remaining > 0 ? "to lose" : "to gain").</strong>
         }
     </p>
 }
@@ -93,7 +93,7 @@
 else
 {
     <h2>Trend</h2>
-    <TrendChart Points="@WeightTrendPoints" Label="Weight" />
+    <TrendChart Points="@WeightTrendPoints" Label="Weight (kg)" />
     @if (BodyFatTrendPoints.Count > 0)
     {
         <TrendChart Points="@BodyFatTrendPoints" Label="Body fat %" />
@@ -103,7 +103,9 @@ else
         <thead>
             <tr>
                 <th>Date</th>
-                <th>Weight</th>
+                @* Body weight is kg throughout (the dashboard's latest-weight line and the demo seed
+                   already say so) -- this page printed bare numbers everywhere. *@
+                <th>Weight (kg)</th>
                 <th>Body fat %</th>
                 <th>Notes</th>
                 <th></th>
@@ -153,7 +155,7 @@ else
         </div>
 
         <div class="mb-3">
-            <label for="weight" class="form-label">Weight</label>
+            <label for="weight" class="form-label">Weight (kg)</label>
             <InputNumber id="weight" class="form-control" @bind-Value="formModel.Weight" />
         </div>
 
