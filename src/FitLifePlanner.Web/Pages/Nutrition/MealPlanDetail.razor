@@ -6,7 +6,8 @@
 @inject NutritionApiClient NutritionApiClient
 @inject NavigationManager NavigationManager
 
-<PageTitle>Meal Plan</PageTitle>
+@* Same as WorkoutPlanDetail: the plan's name in the tab, not just a generic "Meal Plan". *@
+<PageTitle>@(plan is null ? "Meal Plan" : $"{plan.Name} - Meal Plan")</PageTitle>
 
 <ErrorAlert Message="@errorMessage" />
 

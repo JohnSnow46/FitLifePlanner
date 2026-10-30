@@ -8,7 +8,8 @@
 @inject WorkoutsApiClient WorkoutsApiClient
 @inject NavigationManager NavigationManager
 
-<PageTitle>Workout Log</PageTitle>
+@* Same as the plan detail pages: the log's date (its heading) in the tab, not just "Workout Log". *@
+<PageTitle>@(log is null ? "Workout Log" : $"{log.Date.ToLocalTime():d} - Workout Log")</PageTitle>
 
 <ErrorAlert Message="@errorMessage" />
 

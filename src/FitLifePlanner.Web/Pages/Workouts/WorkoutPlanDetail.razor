@@ -6,7 +6,9 @@
 @inject WorkoutsApiClient WorkoutsApiClient
 @inject NavigationManager NavigationManager
 
-<PageTitle>Workout Plan</PageTitle>
+@* The tab used to say just "Workout Plan" for every plan, so several open plans (or one left in
+   the background) were indistinguishable -- the plan's own name is already the page heading. *@
+<PageTitle>@(plan is null ? "Workout Plan" : $"{plan.Name} - Workout Plan")</PageTitle>
 
 <ErrorAlert Message="@errorMessage" />
 
