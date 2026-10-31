@@ -60,7 +60,16 @@ else if (plan is not null)
                     <td>@planExercise.TargetReps</td>
                     <td>@planExercise.TargetWeight</td>
                     <td>
-                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveExerciseAsync(planExercise.Id)">Remove</button>
+                        @* Same per-row Confirm remove / Cancel as WorkoutLogDetail's entries. *@
+                        @if (confirmingRemoveId == planExercise.Id)
+                        {
+                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => RemoveExerciseAsync(planExercise.Id)">Confirm remove</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingRemoveId = null">Cancel</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingRemoveId = planExercise.Id">Remove</button>
+                        }
                     </td>
                 </tr>
             }
@@ -145,6 +154,7 @@ else if (plan is not null)
     private readonly AddExerciseFormModel addExerciseFormModel = new();
     private bool isLoading;
     private bool confirmingDelete;
+    private int? confirmingRemoveId;
     private string? errorMessage;
 
     protected override async Task OnParametersSetAsync()
@@ -246,6 +256,10 @@ else if (plan is not null)
         catch (ApiException ex)
         {
             errorMessage = ex.Message;
+        }
+        finally
+        {
+            confirmingRemoveId = null;
         }
     }
 

@@ -52,7 +52,16 @@ else if (plan is not null)
                     <td>@entry.DayOfWeek</td>
                     <td>@entry.Quantity @FoodUnit(entry.FoodId)</td>
                     <td>
-                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveEntryAsync(entry.Id)">Remove</button>
+                        @* Same per-row Confirm remove / Cancel as WorkoutLogDetail's entries. *@
+                        @if (confirmingRemoveId == entry.Id)
+                        {
+                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => RemoveEntryAsync(entry.Id)">Confirm remove</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingRemoveId = null">Cancel</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingRemoveId = entry.Id">Remove</button>
+                        }
                     </td>
                 </tr>
             }
@@ -142,6 +151,7 @@ else if (plan is not null)
     private readonly AddEntryFormModel addEntryFormModel = new();
     private bool isLoading;
     private bool confirmingDelete;
+    private int? confirmingRemoveId;
     private string? errorMessage;
 
     protected override async Task OnParametersSetAsync()
@@ -271,6 +281,10 @@ else if (plan is not null)
         catch (ApiException ex)
         {
             errorMessage = ex.Message;
+        }
+        finally
+        {
+            confirmingRemoveId = null;
         }
     }
 
