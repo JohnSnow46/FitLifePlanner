@@ -123,12 +123,12 @@ else
                         @* Same two-step confirm the WorkoutLogs rows got -- one click used to delete the entry. *@
                         @if (confirmingDeleteId == entry.Id)
                         {
-                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => DeleteEntryAsync(entry.Id)">Confirm delete</button>
+                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => DeleteEntryAsync(entry.Id)">Confirm delete<span class="visually-hidden"> entry from @entry.Date.ToLocalTime().ToString("d")</span></button>
                             <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingDeleteId = null">Cancel</button>
                         }
                         else
                         {
-                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingDeleteId = entry.Id">Delete</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingDeleteId = entry.Id">Delete<span class="visually-hidden"> entry from @entry.Date.ToLocalTime().ToString("d")</span></button>
                         }
                     </td>
                 </tr>

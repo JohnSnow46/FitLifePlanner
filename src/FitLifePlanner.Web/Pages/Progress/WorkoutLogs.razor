@@ -68,17 +68,17 @@ else
                     </td>
                     <td>@log.TotalVolume.ToString("0.##")</td>
                     <td>
-                        <a href="/workout-logs/@log.Id" class="me-2">Details</a>
+                        <a href="/workout-logs/@log.Id" class="me-2">Details<span class="visually-hidden"> for log from @log.Date.ToLocalTime().ToString("d")</span></a>
                         @* Same two-step confirm WorkoutLogDetail's "Delete log" has -- this row button
                            deleted the whole session, entries included, on a single click. *@
                         @if (confirmingDeleteId == log.Id)
                         {
-                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => DeleteLogAsync(log.Id)">Confirm delete</button>
+                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => DeleteLogAsync(log.Id)">Confirm delete<span class="visually-hidden"> log from @log.Date.ToLocalTime().ToString("d")</span></button>
                             <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingDeleteId = null">Cancel</button>
                         }
                         else
                         {
-                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingDeleteId = log.Id">Delete</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingDeleteId = log.Id">Delete<span class="visually-hidden"> log from @log.Date.ToLocalTime().ToString("d")</span></button>
                         }
                     </td>
                 </tr>
