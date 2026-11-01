@@ -40,7 +40,7 @@ else
             {
                 <tr>
                     <td>
-                        <button type="button" class="btn btn-sm btn-link p-0" aria-label="@(food.IsFavorite ? "Remove from favorites" : "Mark as favorite")" aria-pressed="@food.IsFavorite" @onclick="() => ToggleFavoriteAsync(food)">
+                        <button type="button" class="btn btn-sm btn-link p-0" aria-label="@(food.IsFavorite ? $"Remove {food.Name} from favorites" : $"Mark {food.Name} as favorite")" aria-pressed="@food.IsFavorite" @onclick="() => ToggleFavoriteAsync(food)">
                             <span aria-hidden="true">@(food.IsFavorite ? "★" : "☆")</span>
                         </button>
                     </td>
@@ -51,16 +51,16 @@ else
                     <td>@food.CarbsPerUnit</td>
                     <td>@food.FatPerUnit</td>
                     <td>
-                        <button type="button" class="btn btn-sm btn-outline-primary me-2" @onclick="() => StartEdit(food)">Edit</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary me-2" @onclick="() => StartEdit(food)">Edit<span class="visually-hidden"> @food.Name</span></button>
                         @* Same two-step confirm as the log lists -- one click used to remove the food from the catalog. *@
                         @if (confirmingDeleteId == food.Id)
                         {
-                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => DeleteFoodAsync(food.Id)">Confirm delete</button>
+                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => DeleteFoodAsync(food.Id)">Confirm delete<span class="visually-hidden"> @food.Name</span></button>
                             <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingDeleteId = null">Cancel</button>
                         }
                         else
                         {
-                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingDeleteId = food.Id">Delete</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingDeleteId = food.Id">Delete<span class="visually-hidden"> @food.Name</span></button>
                         }
                     </td>
                 </tr>

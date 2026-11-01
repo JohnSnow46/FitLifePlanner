@@ -43,7 +43,7 @@ else
             {
                 <tr>
                     <td>
-                        <button type="button" class="btn btn-sm btn-link p-0" aria-label="@(exercise.IsFavorite ? "Remove from favorites" : "Mark as favorite")" aria-pressed="@exercise.IsFavorite" @onclick="() => ToggleFavoriteAsync(exercise)">
+                        <button type="button" class="btn btn-sm btn-link p-0" aria-label="@(exercise.IsFavorite ? $"Remove {exercise.Name} from favorites" : $"Mark {exercise.Name} as favorite")" aria-pressed="@exercise.IsFavorite" @onclick="() => ToggleFavoriteAsync(exercise)">
                             <span aria-hidden="true">@(exercise.IsFavorite ? "★" : "☆")</span>
                         </button>
                     </td>
@@ -51,16 +51,16 @@ else
                     <td>@exercise.MuscleGroup</td>
                     <td>@exercise.Description</td>
                     <td>
-                        <button type="button" class="btn btn-sm btn-outline-primary me-2" @onclick="() => StartEdit(exercise)">Edit</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary me-2" @onclick="() => StartEdit(exercise)">Edit<span class="visually-hidden"> @exercise.Name</span></button>
                         @* Same two-step confirm as the log lists -- one click used to remove the exercise from the catalog. *@
                         @if (confirmingDeleteId == exercise.Id)
                         {
-                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => DeleteExerciseAsync(exercise.Id)">Confirm delete</button>
+                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => DeleteExerciseAsync(exercise.Id)">Confirm delete<span class="visually-hidden"> @exercise.Name</span></button>
                             <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingDeleteId = null">Cancel</button>
                         }
                         else
                         {
-                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingDeleteId = exercise.Id">Delete</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingDeleteId = exercise.Id">Delete<span class="visually-hidden"> @exercise.Name</span></button>
                         }
                     </td>
                 </tr>
