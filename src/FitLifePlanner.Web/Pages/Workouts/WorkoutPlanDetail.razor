@@ -63,12 +63,12 @@ else if (plan is not null)
                         @* Same per-row Confirm remove / Cancel as WorkoutLogDetail's entries. *@
                         @if (confirmingRemoveId == planExercise.Id)
                         {
-                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => RemoveExerciseAsync(planExercise.Id)">Confirm remove</button>
+                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => RemoveExerciseAsync(planExercise.Id)">Confirm remove<span class="visually-hidden"> @ExerciseName(planExercise.ExerciseId)</span></button>
                             <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingRemoveId = null">Cancel</button>
                         }
                         else
                         {
-                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingRemoveId = planExercise.Id">Remove</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingRemoveId = planExercise.Id">Remove<span class="visually-hidden"> @ExerciseName(planExercise.ExerciseId)</span></button>
                         }
                     </td>
                 </tr>

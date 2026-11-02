@@ -55,12 +55,12 @@ else if (plan is not null)
                         @* Same per-row Confirm remove / Cancel as WorkoutLogDetail's entries. *@
                         @if (confirmingRemoveId == entry.Id)
                         {
-                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => RemoveEntryAsync(entry.Id)">Confirm remove</button>
+                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => RemoveEntryAsync(entry.Id)">Confirm remove<span class="visually-hidden"> @FoodName(entry.FoodId) (@entry.MealType, @entry.DayOfWeek)</span></button>
                             <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingRemoveId = null">Cancel</button>
                         }
                         else
                         {
-                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingRemoveId = entry.Id">Remove</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingRemoveId = entry.Id">Remove<span class="visually-hidden"> @FoodName(entry.FoodId) (@entry.MealType, @entry.DayOfWeek)</span></button>
                         }
                     </td>
                 </tr>
