@@ -65,12 +65,12 @@ else if (log is not null)
                            that history, so it gets the same two-step confirm as the list rows. *@
                         @if (confirmingRemoveEntryId == entry.Id)
                         {
-                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => RemoveEntryAsync(entry.Id)">Confirm remove</button>
+                            <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => RemoveEntryAsync(entry.Id)">Confirm remove<span class="visually-hidden"> @ExerciseName(entry.ExerciseId)</span></button>
                             <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingRemoveEntryId = null">Cancel</button>
                         }
                         else
                         {
-                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingRemoveEntryId = entry.Id">Remove</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => confirmingRemoveEntryId = entry.Id">Remove<span class="visually-hidden"> @ExerciseName(entry.ExerciseId)</span></button>
                         }
                     </td>
                 </tr>
