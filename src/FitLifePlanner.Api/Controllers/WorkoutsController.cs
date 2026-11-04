@@ -67,6 +67,19 @@ public class WorkoutsController(FitLifePlannerDbContext context) : ControllerBas
         return NoContent();
     }
 
+    [HttpPut("exercises/{id:int}/favorite")]
+    public async Task<IActionResult> SetExerciseFavoriteAsync(int id, SetExerciseFavoriteRequest request)
+    {
+        var exercise = await context.Exercises.FindAsync(id)
+            ?? throw new NotFoundException("Exercise", id);
+
+        exercise.IsFavorite = request.IsFavorite;
+
+        await context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
     [HttpDelete("exercises/{id:int}")]
     public async Task<IActionResult> DeleteExerciseAsync(int id)
     {
@@ -136,6 +149,35 @@ public class WorkoutsController(FitLifePlannerDbContext context) : ControllerBas
         await context.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    [HttpPost("workout-plans/{id:int}/duplicate")]
+    public async Task<ActionResult<WorkoutPlanResponse>> DuplicateWorkoutPlanAsync(int id)
+    {
+        var userId = User.GetUserId();
+
+        var source = await context.WorkoutPlans
+            .Include(p => p.Exercises)
+            .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId)
+            ?? throw new NotFoundException("WorkoutPlan", id);
+
+        var copy = new WorkoutPlan
+        {
+            UserId = userId,
+            Name = $"{source.Name} (Copy)",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        context.WorkoutPlans.Add(copy);
+
+        foreach (var exercise in source.Exercises.OrderBy(e => e.Order))
+        {
+            copy.AddExercise(exercise.ExerciseId, exercise.Order, exercise.TargetSets, exercise.TargetReps, exercise.TargetWeight);
+        }
+
+        await context.SaveChangesAsync();
+
+        return Created($"/api/workout-plans/{copy.Id}", copy.ToResponse());
     }
 
     [HttpDelete("workout-plans/{id:int}")]

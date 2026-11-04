@@ -1,7 +1,8 @@
-<div class="d-flex align-items-center justify-content-center gap-2 py-4">
-    <div class="spinner-border" role="status">
-        <span class="visually-hidden">@Text</span>
-    </div>
+@* The status role sits on the wrapper so the text is announced once -- it used to live on
+   the spinner with a visually-hidden copy of the text, next to the visible copy, so screen
+   readers read "Loading… Loading…". The spinner itself is decorative. *@
+<div class="d-flex align-items-center justify-content-center gap-2 py-4" role="status">
+    <div class="spinner-border" aria-hidden="true"></div>
     <span>@Text</span>
 </div>
 

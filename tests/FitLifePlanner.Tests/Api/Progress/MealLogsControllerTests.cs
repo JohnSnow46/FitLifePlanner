@@ -154,4 +154,71 @@ public class MealLogsControllerTests(TestApiFactory factory) : IClassFixture<Tes
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Fact]
+    public async Task GetNutritionSummary_aggregates_macros_per_day()
+    {
+        var client = await CreateAuthenticatedClientAsync();
+        var foodId = await CreateFoodAsync(client, "Chicken Breast");
+        var today = DateTime.UtcNow.Date;
+
+        await client.PostAsJsonAsync("/api/meal-logs", new CreateMealLogRequest
+        {
+            Date = today,
+            MealType = MealType.Lunch,
+            FoodId = foodId,
+            QuantityConsumed = 100m
+        });
+        await client.PostAsJsonAsync("/api/meal-logs", new CreateMealLogRequest
+        {
+            Date = today,
+            MealType = MealType.Dinner,
+            FoodId = foodId,
+            QuantityConsumed = 50m
+        });
+
+        var response = await client.GetAsync($"/api/meal-logs/summary?from={today:o}&to={today:o}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var summary = await response.Content.ReadFromJsonAsync<List<NutritionDaySummaryResponse>>(JsonOptions);
+        var day = Assert.Single(summary!);
+        Assert.Equal(today, day.Date);
+        Assert.Equal(150m * 1.5m, day.Calories);
+        Assert.Equal(150m * 0.2m, day.Protein);
+    }
+
+    [Fact]
+    public async Task GetNutritionSummary_without_range_defaults_to_last_seven_days()
+    {
+        var client = await CreateAuthenticatedClientAsync();
+
+        var response = await client.GetAsync("/api/meal-logs/summary");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var summary = await response.Content.ReadFromJsonAsync<List<NutritionDaySummaryResponse>>(JsonOptions);
+        Assert.Empty(summary!);
+    }
+
+    [Fact]
+    public async Task ExportMealLogs_returns_csv_with_header_and_rows()
+    {
+        var client = await CreateAuthenticatedClientAsync();
+        var foodId = await CreateFoodAsync(client, "Chicken Breast");
+        await client.PostAsJsonAsync("/api/meal-logs", new CreateMealLogRequest
+        {
+            Date = DateTime.UtcNow.AddDays(-1),
+            MealType = MealType.Lunch,
+            FoodId = foodId,
+            QuantityConsumed = 200m
+        });
+
+        var response = await client.GetAsync("/api/meal-logs/export");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("text/csv", response.Content.Headers.ContentType?.MediaType);
+        var csv = await response.Content.ReadAsStringAsync();
+        var lines = csv.TrimEnd().Split('\n');
+        Assert.Equal("Date,MealType,FoodId,QuantityConsumed", lines[0].TrimEnd('\r'));
+        Assert.Contains($"Lunch,{foodId},200", lines[1]);
+    }
 }

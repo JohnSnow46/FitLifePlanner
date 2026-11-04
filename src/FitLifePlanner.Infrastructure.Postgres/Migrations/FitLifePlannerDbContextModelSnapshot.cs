@@ -42,6 +42,9 @@ namespace FitLifePlanner.Infrastructure.Postgres.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)");
 
+                    b.Property<bool>("IsFavorite")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -256,6 +259,10 @@ namespace FitLifePlanner.Infrastructure.Postgres.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal?>("DailyCalorieTarget")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -270,6 +277,14 @@ namespace FitLifePlanner.Infrastructure.Postgres.Migrations
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<decimal?>("TargetBodyFatPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<decimal?>("TargetWeight")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
 
                     b.HasKey("Id");
 
@@ -291,6 +306,9 @@ namespace FitLifePlanner.Infrastructure.Postgres.Migrations
                         .IsRequired()
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
+
+                    b.Property<bool>("IsFavorite")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("MuscleGroup")
                         .IsRequired()

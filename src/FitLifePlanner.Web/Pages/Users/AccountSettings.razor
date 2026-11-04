@@ -1,0 +1,188 @@
+@page "/account"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.ComponentModel.DataAnnotations
+@using FitLifePlanner.Web.Contracts.Users
+@using FitLifePlanner.Web.Services
+@inject UsersApiClient UsersApiClient
+
+<PageTitle>Account settings</PageTitle>
+
+<h1>Account settings</h1>
+
+<ErrorAlert Message="@errorMessage" />
+
+@if (successMessage is not null)
+{
+    <div class="alert alert-success" role="alert">@successMessage</div>
+}
+
+<h2>Change password</h2>
+
+<EditForm Model="formModel" OnValidSubmit="HandleSubmitAsync">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label for="currentPassword" class="form-label">Current password</label>
+        <InputText id="currentPassword" type="password" class="form-control" @bind-Value="formModel.CurrentPassword" />
+    </div>
+
+    <div class="mb-3">
+        <label for="newPassword" class="form-label">New password</label>
+        <InputText id="newPassword" type="password" class="form-control" @bind-Value="formModel.NewPassword" />
+    </div>
+
+    <button type="submit" class="btn btn-primary" disabled="@isSaving">Change password</button>
+</EditForm>
+
+<h2 class="mt-4">Nutrition target</h2>
+
+<EditForm Model="nutritionTargetFormModel" OnValidSubmit="HandleSaveNutritionTargetAsync">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="row mb-3">
+        <div class="col-auto">
+            <label for="dailyCalorieTarget" class="form-label">Daily calorie target</label>
+            <InputNumber id="dailyCalorieTarget" class="form-control" @bind-Value="nutritionTargetFormModel.DailyCalorieTarget" />
+        </div>
+        <div class="col-auto align-self-end">
+            <button type="submit" class="btn btn-outline-primary">Save target</button>
+        </div>
+    </div>
+</EditForm>
+
+<h2 class="mt-4">Body goals</h2>
+
+<EditForm Model="goalsFormModel" OnValidSubmit="HandleSaveGoalsAsync">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="row mb-3">
+        <div class="col-auto">
+            <label for="targetWeight" class="form-label">Target weight (kg)</label>
+            <InputNumber id="targetWeight" class="form-control" @bind-Value="goalsFormModel.TargetWeight" />
+        </div>
+        <div class="col-auto">
+            <label for="targetBodyFatPercent" class="form-label">Target body fat %</label>
+            <InputNumber id="targetBodyFatPercent" class="form-control" @bind-Value="goalsFormModel.TargetBodyFatPercent" />
+        </div>
+        <div class="col-auto align-self-end">
+            <button type="submit" class="btn btn-outline-primary">Save goal</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    private readonly ChangePasswordFormModel formModel = new();
+    private readonly NutritionTargetFormModel nutritionTargetFormModel = new();
+    private readonly GoalsFormModel goalsFormModel = new();
+    private bool isSaving;
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var user = await UsersApiClient.GetCurrentUserAsync();
+            nutritionTargetFormModel.DailyCalorieTarget = user.DailyCalorieTarget;
+            goalsFormModel.TargetWeight = user.TargetWeight;
+            goalsFormModel.TargetBodyFatPercent = user.TargetBodyFatPercent;
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        isSaving = true;
+        errorMessage = null;
+        successMessage = null;
+        try
+        {
+            await UsersApiClient.ChangePasswordAsync(new ChangePasswordRequest
+            {
+                CurrentPassword = formModel.CurrentPassword,
+                NewPassword = formModel.NewPassword
+            });
+            formModel.CurrentPassword = string.Empty;
+            formModel.NewPassword = string.Empty;
+            successMessage = "Password changed.";
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task HandleSaveNutritionTargetAsync()
+    {
+        errorMessage = null;
+        successMessage = null;
+        try
+        {
+            await UsersApiClient.UpdateNutritionTargetAsync(new UpdateNutritionTargetRequest
+            {
+                DailyCalorieTarget = nutritionTargetFormModel.DailyCalorieTarget
+            });
+            successMessage = "Nutrition target saved.";
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task HandleSaveGoalsAsync()
+    {
+        errorMessage = null;
+        successMessage = null;
+        try
+        {
+            await UsersApiClient.UpdateGoalsAsync(new UpdateBodyGoalsRequest
+            {
+                TargetWeight = goalsFormModel.TargetWeight,
+                TargetBodyFatPercent = goalsFormModel.TargetBodyFatPercent
+            });
+            successMessage = "Body goals saved.";
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private sealed class ChangePasswordFormModel
+    {
+        [Required]
+        [MaxLength(100)]
+        public string CurrentPassword { get; set; } = string.Empty;
+
+        [Required]
+        [MinLength(8)]
+        [MaxLength(100)]
+        public string NewPassword { get; set; } = string.Empty;
+    }
+
+    private sealed class NutritionTargetFormModel
+    {
+        [Range(0.01, double.MaxValue)]
+        public decimal? DailyCalorieTarget { get; set; }
+    }
+
+    private sealed class GoalsFormModel
+    {
+        [Range(0.01, double.MaxValue)]
+        public decimal? TargetWeight { get; set; }
+
+        [Range(0, 100)]
+        public decimal? TargetBodyFatPercent { get; set; }
+    }
+}

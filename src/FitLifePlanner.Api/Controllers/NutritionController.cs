@@ -66,6 +66,19 @@ public class NutritionController(FitLifePlannerDbContext context) : ControllerBa
         return NoContent();
     }
 
+    [HttpPut("foods/{id:int}/favorite")]
+    public async Task<IActionResult> SetFoodFavoriteAsync(int id, SetFoodFavoriteRequest request)
+    {
+        var food = await context.Foods.FindAsync(id)
+            ?? throw new NotFoundException("Food", id);
+
+        food.IsFavorite = request.IsFavorite;
+
+        await context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
     [HttpDelete("foods/{id:int}")]
     public async Task<IActionResult> DeleteFoodAsync(int id)
     {
@@ -134,6 +147,34 @@ public class NutritionController(FitLifePlannerDbContext context) : ControllerBa
         await context.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    [HttpPost("meal-plans/{id:int}/duplicate")]
+    public async Task<ActionResult<MealPlanResponse>> DuplicateMealPlanAsync(int id)
+    {
+        var userId = User.GetUserId();
+
+        var source = await context.MealPlans
+            .Include(p => p.Entries)
+            .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId)
+            ?? throw new NotFoundException("MealPlan", id);
+
+        var copy = new MealPlan
+        {
+            UserId = userId,
+            Name = $"{source.Name} (Copy)"
+        };
+
+        context.MealPlans.Add(copy);
+
+        foreach (var entry in source.Entries)
+        {
+            copy.AddEntry(entry.FoodId, entry.MealType, entry.Quantity, entry.DayOfWeek);
+        }
+
+        await context.SaveChangesAsync();
+
+        return Created($"/api/meal-plans/{copy.Id}", copy.ToResponse());
     }
 
     [HttpDelete("meal-plans/{id:int}")]

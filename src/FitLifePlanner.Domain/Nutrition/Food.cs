@@ -9,4 +9,5 @@ public class Food
     public decimal ProteinPerUnit { get; set; }
     public decimal CarbsPerUnit { get; set; }
     public decimal FatPerUnit { get; set; }
+    public bool IsFavorite { get; set; }
 }

@@ -115,6 +115,7 @@ See ADR-0001, ADR-0002.
 | Restore dependencies | `dotnet restore` |
 | Build | `dotnet build` |
 | Run backend API | `dotnet run --project src/FitLifePlanner.Api` |
+| Seed demo account + history (recruiter walkthrough) | `dotnet run --project src/FitLifePlanner.Api -- --seed-demo` |
 | Run frontend (Blazor WASM) | `dotnet run --project src/FitLifePlanner.Web` |
 | Run tests | `dotnet test` |
 | Format / lint | `dotnet format --verify-no-changes` |
