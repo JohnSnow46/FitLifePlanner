@@ -124,7 +124,7 @@ else
                         @if (confirmingDeleteId == entry.Id)
                         {
                             <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => DeleteEntryAsync(entry.Id)">Confirm delete<span class="visually-hidden"> entry from @entry.Date.ToLocalTime().ToString("d")</span></button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingDeleteId = null">Cancel</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingDeleteId = null">Cancel<span class="visually-hidden"> entry from @entry.Date.ToLocalTime().ToString("d")</span></button>
                         }
                         else
                         {

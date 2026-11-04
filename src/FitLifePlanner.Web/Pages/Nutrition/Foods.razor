@@ -56,7 +56,7 @@ else
                         @if (confirmingDeleteId == food.Id)
                         {
                             <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => DeleteFoodAsync(food.Id)">Confirm delete<span class="visually-hidden"> @food.Name</span></button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingDeleteId = null">Cancel</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingDeleteId = null">Cancel<span class="visually-hidden"> @food.Name</span></button>
                         }
                         else
                         {

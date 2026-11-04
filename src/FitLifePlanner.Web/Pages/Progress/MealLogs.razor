@@ -123,7 +123,7 @@ else
                         @if (confirmingDeleteId == mealLog.Id)
                         {
                             <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => DeleteMealLogAsync(mealLog.Id)">Confirm delete<span class="visually-hidden"> @FoodName(mealLog.FoodId) from @mealLog.Date.ToLocalTime().ToString("d")</span></button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingDeleteId = null">Cancel</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingDeleteId = null">Cancel<span class="visually-hidden"> @FoodName(mealLog.FoodId) from @mealLog.Date.ToLocalTime().ToString("d")</span></button>
                         }
                         else
                         {

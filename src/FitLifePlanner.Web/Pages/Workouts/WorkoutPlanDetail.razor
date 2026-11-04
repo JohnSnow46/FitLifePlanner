@@ -64,7 +64,7 @@ else if (plan is not null)
                         @if (confirmingRemoveId == planExercise.Id)
                         {
                             <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => RemoveExerciseAsync(planExercise.Id)">Confirm remove<span class="visually-hidden"> @ExerciseName(planExercise.ExerciseId)</span></button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingRemoveId = null">Cancel</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingRemoveId = null">Cancel<span class="visually-hidden"> @ExerciseName(planExercise.ExerciseId)</span></button>
                         }
                         else
                         {

@@ -66,7 +66,7 @@ else if (log is not null)
                         @if (confirmingRemoveEntryId == entry.Id)
                         {
                             <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => RemoveEntryAsync(entry.Id)">Confirm remove<span class="visually-hidden"> @ExerciseName(entry.ExerciseId)</span></button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingRemoveEntryId = null">Cancel</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingRemoveEntryId = null">Cancel<span class="visually-hidden"> @ExerciseName(entry.ExerciseId)</span></button>
                         }
                         else
                         {

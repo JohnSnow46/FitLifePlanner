@@ -56,7 +56,7 @@ else if (plan is not null)
                         @if (confirmingRemoveId == entry.Id)
                         {
                             <button type="button" class="btn btn-sm btn-danger me-1" @onclick="() => RemoveEntryAsync(entry.Id)">Confirm remove<span class="visually-hidden"> @FoodName(entry.FoodId) (@entry.MealType, @entry.DayOfWeek)</span></button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingRemoveId = null">Cancel</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingRemoveId = null">Cancel<span class="visually-hidden"> @FoodName(entry.FoodId) (@entry.MealType, @entry.DayOfWeek)</span></button>
                         }
                         else
                         {
