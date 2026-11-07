@@ -11,10 +11,14 @@
 
 <ErrorAlert Message="@errorMessage" />
 
-@if (successMessage is not null)
-{
-    <div class="alert alert-success" role="alert">@successMessage</div>
-}
+@* A confirmation, not an error: polite "status" instead of an interrupting "alert", and the
+   region stays in the DOM so screen readers pick up the text when it appears. *@
+<div role="status">
+    @if (successMessage is not null)
+    {
+        <div class="alert alert-success">@successMessage</div>
+    }
+</div>
 
 <h2>Change password</h2>
 
