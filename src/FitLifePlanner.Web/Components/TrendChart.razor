@@ -28,7 +28,13 @@ else
 
     var polylinePoints = string.Join(" ", ordered.Select((p, i) => PointToSvg(i, p.Value)));
 
-    <svg viewBox="0 0 @Width @Height" class="w-100" style="max-height: 200px" role="img" aria-label="@Label trend">
+    @* The line itself is invisible to a screen reader, so the label carries what it shows:
+       the first and last value with their dates, plus the range in between. *@
+    var accessibleLabel = $"{Label} trend over {ordered.Count} entries: " +
+        $"{ordered[0].Value:0.##} on {ordered[0].Date:d} to {ordered[^1].Value:0.##} on {ordered[^1].Date:d}, " +
+        $"lowest {minValue:0.##}, highest {maxValue:0.##}";
+
+    <svg viewBox="0 0 @Width @Height" class="w-100" style="max-height: 200px" role="img" aria-label="@accessibleLabel">
         <polyline points="@polylinePoints" fill="none" stroke="currentColor" stroke-width="2" />
         @for (var i = 0; i < ordered.Count; i++)
         {
