@@ -28,12 +28,12 @@
 
     <div class="mb-3">
         <label for="currentPassword" class="form-label">Current password</label>
-        <InputText id="currentPassword" type="password" class="form-control" @bind-Value="formModel.CurrentPassword" />
+        <InputText id="currentPassword" type="password" autocomplete="current-password" class="form-control" @bind-Value="formModel.CurrentPassword" />
     </div>
 
     <div class="mb-3">
         <label for="newPassword" class="form-label">New password</label>
-        <InputText id="newPassword" type="password" class="form-control" @bind-Value="formModel.NewPassword" />
+        <InputText id="newPassword" type="password" autocomplete="new-password" class="form-control" @bind-Value="formModel.NewPassword" />
     </div>
 
     <button type="submit" class="btn btn-primary" disabled="@isSaving">Change password</button>
