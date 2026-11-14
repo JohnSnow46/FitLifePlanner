@@ -24,6 +24,25 @@
 
         <ErrorAlert Message="@errorMessage" />
 
+        @if (!isLoading && (!loggedWorkoutToday || !loggedMealToday))
+        {
+            <div class="alert alert-info">
+                @if (!loggedWorkoutToday && !loggedMealToday)
+                {
+                    <text>You haven't logged a workout or a meal today.</text>
+                }
+                else if (!loggedWorkoutToday)
+                {
+                    <text>You haven't logged a workout today.</text>
+                }
+                else
+                {
+                    <text>You haven't logged a meal today.</text>
+                }
+                <a href="/workout-logs">Log workout</a> &middot; <a href="/meal-logs">Log meal</a>
+            </div>
+        }
+
         @if (isLoading)
         {
             <LoadingIndicator />
@@ -82,7 +101,13 @@
                         <ul class="list-group mb-2">
                             @foreach (var log in recentWorkoutLogs)
                             {
-                                <li class="list-group-item">@log.Date.ToLocalTime().ToString("d") &mdash; @log.Notes</li>
+                                <li class="list-group-item">
+                                    @log.Date.ToLocalTime().ToString("d") &mdash; volume @log.TotalVolume.ToString("0.##")
+                                    @if (!string.IsNullOrWhiteSpace(log.Notes))
+                                    {
+                                        <text> &middot; @log.Notes</text>
+                                    }
+                                </li>
                             }
                         </ul>
                     }
@@ -99,7 +124,7 @@
                         <ul class="list-group mb-2">
                             @foreach (var log in recentMealLogs)
                             {
-                                <li class="list-group-item">@log.Date.ToLocalTime().ToString("d") &mdash; @log.MealType, qty @log.QuantityConsumed</li>
+                                <li class="list-group-item">@log.Date.ToLocalTime().ToString("d") &mdash; @log.MealType: @FoodName(log.FoodId), @log.QuantityConsumed @FoodUnit(log.FoodId)</li>
                             }
                         </ul>
                     }
@@ -129,11 +154,22 @@
     private BodyMetricEntryResponse? latestBodyMetric;
     private IReadOnlyCollection<WorkoutLogResponse> recentWorkoutLogs = [];
     private IReadOnlyCollection<MealLogResponse> recentMealLogs = [];
+    private IReadOnlyCollection<FoodResponse> foodCatalog = [];
+    private bool loggedWorkoutToday;
+    private bool loggedMealToday;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadDashboardAsync();
     }
+
+    /// Same lookup + "#id" fallback MealLogs uses -- the recent-meals list used to show only
+    /// "Breakfast, qty 2", with no way to tell what was actually eaten.
+    private string FoodName(int foodId) =>
+        foodCatalog.FirstOrDefault(f => f.Id == foodId)?.Name ?? $"#{foodId}";
+
+    private string FoodUnit(int foodId) =>
+        foodCatalog.FirstOrDefault(f => f.Id == foodId)?.Unit ?? string.Empty;
 
     private async Task LoadDashboardAsync()
     {
@@ -149,14 +185,18 @@
             var workoutLogsTask = ProgressApiClient.GetWorkoutLogsAsync(from: logsFrom);
             var mealLogsTask = ProgressApiClient.GetMealLogsAsync(from: logsFrom);
             var bodyMetricsTask = ProgressApiClient.GetBodyMetricEntriesAsync(from: metricsFrom);
+            var foodsTask = NutritionApiClient.GetFoodsAsync();
 
-            await Task.WhenAll(workoutPlansTask, mealPlansTask, workoutLogsTask, mealLogsTask, bodyMetricsTask);
+            await Task.WhenAll(workoutPlansTask, mealPlansTask, workoutLogsTask, mealLogsTask, bodyMetricsTask, foodsTask);
 
             workoutPlanCount = workoutPlansTask.Result.Count;
             mealPlanCount = mealPlansTask.Result.Count;
+            foodCatalog = foodsTask.Result;
             recentWorkoutLogs = workoutLogsTask.Result.OrderByDescending(log => log.Date).Take(5).ToList();
             recentMealLogs = mealLogsTask.Result.OrderByDescending(log => log.Date).Take(5).ToList();
             latestBodyMetric = bodyMetricsTask.Result.OrderByDescending(entry => entry.Date).FirstOrDefault();
+            loggedWorkoutToday = workoutLogsTask.Result.Any(log => log.Date.ToLocalTime().Date == DateTime.Today);
+            loggedMealToday = mealLogsTask.Result.Any(log => log.Date.ToLocalTime().Date == DateTime.Today);
         }
         catch (ApiException ex)
         {

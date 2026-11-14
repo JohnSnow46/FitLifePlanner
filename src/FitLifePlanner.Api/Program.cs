@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using FitLifePlanner.Api.Middleware;
+using FitLifePlanner.Api.Seeding;
 using FitLifePlanner.Api.Services;
 using FitLifePlanner.Domain.Users;
 using FitLifePlanner.Infrastructure.Data;
@@ -97,6 +98,15 @@ if (!app.Environment.IsEnvironment("Testing"))
     using var migrationScope = app.Services.CreateScope();
     var dbContext = migrationScope.ServiceProvider.GetRequiredService<FitLifePlannerDbContext>();
     dbContext.Database.Migrate();
+
+    // One-shot: `dotnet run --project src/FitLifePlanner.Api -- --seed-demo` populates
+    // a demo account + history (docs/roadmap.md ETAP 9+ "demo seed") and exits instead
+    // of starting Kestrel.
+    if (args.Contains("--seed-demo"))
+    {
+        await DemoDataSeeder.SeedAsync(migrationScope.ServiceProvider);
+        return;
+    }
 }
 
 // Configure the HTTP request pipeline.

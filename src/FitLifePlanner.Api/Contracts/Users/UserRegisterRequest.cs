@@ -15,5 +15,6 @@ public record UserRegisterRequest
 
     [Required]
     [MinLength(8)]
+    [MaxLength(100)]
     public string Password { get; init; } = string.Empty;
 }

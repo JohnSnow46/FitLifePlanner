@@ -25,17 +25,17 @@ else
 
         <div class="mb-3">
             <label for="name" class="form-label">Name</label>
-            <InputText id="name" class="form-control" @bind-Value="formModel.Name" />
+            <InputText id="name" autocomplete="name" class="form-control" @bind-Value="formModel.Name" />
         </div>
 
         <div class="mb-3">
             <label for="email" class="form-label">Email</label>
-            <InputText id="email" class="form-control" @bind-Value="formModel.Email" />
+            <InputText id="email" autocomplete="email" class="form-control" @bind-Value="formModel.Email" />
         </div>
 
         <div class="mb-3">
             <label for="password" class="form-label">Password</label>
-            <InputText id="password" type="password" class="form-control" @bind-Value="formModel.Password" />
+            <InputText id="password" type="password" autocomplete="new-password" class="form-control" @bind-Value="formModel.Password" />
         </div>
 
         <button type="submit" class="btn btn-primary">Register</button>
@@ -77,14 +77,17 @@ else
     private sealed class RegisterFormModel
     {
         [Required]
+        [MaxLength(200)]
         public string Name { get; set; } = string.Empty;
 
         [Required]
         [EmailAddress]
+        [MaxLength(200)]
         public string Email { get; set; } = string.Empty;
 
         [Required]
         [MinLength(8)]
+        [MaxLength(100)]
         public string Password { get; set; } = string.Empty;
     }
 }

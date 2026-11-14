@@ -32,6 +32,12 @@ public class WorkoutsApiClient(HttpClient httpClient)
         await EnsureSuccessAsync(response, cancellationToken);
     }
 
+    public async Task SetExerciseFavoriteAsync(int id, bool isFavorite, CancellationToken cancellationToken = default)
+    {
+        var response = await httpClient.PutAsJsonAsync($"api/exercises/{id}/favorite", new SetExerciseFavoriteRequest { IsFavorite = isFavorite }, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+    }
+
     public async Task DeleteExerciseAsync(int id, CancellationToken cancellationToken = default)
     {
         var response = await httpClient.DeleteAsync($"api/exercises/{id}", cancellationToken);
@@ -66,6 +72,12 @@ public class WorkoutsApiClient(HttpClient httpClient)
     {
         var response = await httpClient.DeleteAsync($"api/workout-plans/{id}", cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
+    }
+
+    public async Task<WorkoutPlanResponse> DuplicateWorkoutPlanAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var response = await httpClient.PostAsync($"api/workout-plans/{id}/duplicate", null, cancellationToken);
+        return await ReadResponseAsync<WorkoutPlanResponse>(response, cancellationToken);
     }
 
     public async Task<WorkoutPlanExerciseResponse> AddWorkoutPlanExerciseAsync(int planId, AddWorkoutPlanExerciseRequest request, CancellationToken cancellationToken = default)
